@@ -1,0 +1,168 @@
+---
+title: "full_life_tablea"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r tidyverse, message=FALSE, warning=FALSE, echo=FALSE}
+if(! 'pacman' %in% installed.packages()[,1]){
+  install.packages("pacman")
+}
+
+pacman::p_load(tidyverse)
+pacman::p_load(plotly)
+pacman::p_load(foreach)
+pacman::p_load(iterators)
+pacman::p_load(DT)
+pacman::p_load(ade4)
+pacman::p_load(FactoMineR)
+pacman::p_load(factoextra)
+pacman::p_load(FactoInvestigate)
+pacman::p_load(ggfortify)
+pacman::p_load(pathlibr)
+pacman::p_load(demography)
+pacman::p_load(glue)
+```
+
+```{r, include=FALSE}
+fpath <- 'full_life_table.Rds'  # once you have downloaded the file
+
+if (! file.exists(fpath)){
+  cat(glue('{fpath} should be in working directory!'))
+} else {
+  life_table <- readr::read_rds(fpath)
+  glimpse(life_table)
+}
+```
+
+
+```{r}
+knitr::kable(head(life_table))
+```
+```{r}
+levels(as.factor(life_table$Gender))
+```
+```{r}
+life_table48 %>%filter( Year==1948)%>%
+  ggplot() +
+  geom_line(mapping = aes(y= qx, x= Age,col= Country)) 
+
+```
+#####     esssayer lechelle logarithmique pour les qx !!!!!!!!
+
+
+### reagdrter que homme eet femme pas both !
+```{r}
+
+life_table48 %>%filter( Year==1948 ,Country!="USA")%>%
+  ggplot() +
+  geom_line(mapping = aes(y= qx/filter(life_table48,Country=="USA")$qx , x= Age,col= Country)) 
+```
+for each europpeen countries => on remarque que le Spain a un taux de mortalite plus eleve que le taux de mortalite que les etas unis et ils ont le tc de mortailité le plus iomportant en la comparant avec les usa par rapport au autre pays europpeen avant 30 ans ( à verifier la date)
+mais a partir de 45 ans tous les qx1 euro / qx usa < 1 donc ils ont un tx de moratlity plus faibles que usa et donc les gens vivent plus longtemps 
+
+# interpreter 
+
+regarder la decroissance au niveau de 0 (c'est bizartre car fct de repartioiton ): lers nvea nées crevent plus rapidement ! 
+
+
+-faire des comparaison en fonction du pays qui est plus et qui est moins apres 60ans 
+et constyater avant 60 ans que cest la mm chose 
+
+
+
+#manque extraire le quptient de mortality des usa et deseurope et interpreter
+
+# 5 death rate evolution 
+
+```{r}
+(ggplot(data = filter(life_table, Year == seq(1946,2016,10) ) )+
+   aes(x = Age, 
+      y = qx, 
+      shape = Gender, 
+      frame = Year,
+      col = Country) +
+   geom_line() +
+  theme(legend.position = "none") +
+  labs(title= "mortality ratio % Gender", x = "age", y = "qx")
+   ) %>% 
+  plotly::ggplotly(height = 500, width=750)
+
+
+```
+```{r}
+theme_set(theme_bw())
+ggplot(data = filter(life_table, Year == seq(1946,2016,10))) +
+  geom_line(aes(x = Age, 
+                 y = qx, 
+                 color = Country))   +
+  labs(title= "mortality ratio", x = "age", y = "qx") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) +
+  facet_grid(Gender~Country, scales = 'free')
+
+```
+
+```{r}
+ratio_mortality_rates <- function(df,
+                                  reference_year=1946,
+                                  target_years=seq(1946, 2016, 10)){
+  df1 = df %>%
+    filter( Year == target_years) %>%
+    group_by(Country, Year, Age, Gender) %>%
+    select(Year, Age , qx , Country , Gender) 
+  
+  df2 = df %>%
+    filter(Year == reference_year) %>%
+    group_by(Country, Year, Age, Gender) %>%
+    mutate(qx.ref_year = qx )
+  
+  
+  return(  inner_join(df1,df2, by= c("Country"  , "Age" , "Gender")))
+}
+
+test <- ratio_mortality_rates(life_table, reference_year = 1946 , target_years = c(1946,2016))
+```
+
+
+
+
+
+
+# 6 Trends 
+
+
+
+```{r}
+life_table %>%
+  filter(Age == c(0,1,5), Gender != "Both") %>%
+  ggplot(mapping = aes (x = Year , y=qx , col = as.factor(Age))) +
+  geom_line()+
+  facet_grid(Gender~Country, scales = 'free')
+```
+
+```{r}
+life_table %>%
+  filter(Age == c(15,20,40,60)) %>%
+  ggplot(mapping = aes (x = Year , y=qx , col =as.factor(Age))) +
+  geom_line()+
+  facet_grid(Gender~Country, scales = 'free')
+
+```
+# 7 rearangement 
+
+```{r}
+
+
+life_table_pivot<-life_table %>%
+  select(qx,Age,Country,Year,Gender) %>%
+  pivot_wider(names_from = Age , values_from = qx)
+
+
+#life_table_pivot %>%
+ # group_by(Country) %>%
+  #summarise(e_0 = mean(life_table_pivot$`0`)
+  
+
+```
+
