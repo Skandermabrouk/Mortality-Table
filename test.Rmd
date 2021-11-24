@@ -43,126 +43,175 @@ knitr::kable(head(life_table))
 ```{r}
 levels(as.factor(life_table$Gender))
 ```
+##PLOT Qx Year 1948, Age, filter by Countries
 ```{r}
-life_table48 %>%filter( Year==1948)%>%
+life_table48 <- life_table %>% filter( Year==1948) %>% #J'ai rajouter '<- life_table' parce que y'avais pas de référence sur mon IDE
   ggplot() +
-  geom_line(mapping = aes(y= qx, x= Age,col= Country)) 
+  geom_point(mapping = aes(y= qx, x= Age,col= Country),alpha=0.35) #+  scale_y_continuous(trans='log10') #si tu veux l'échelle log
+
+# Si on prend l'échelle log pour les qx, faut regler le problème des warnings.. à priori on a besoin de plot sur l'échelle log. -CG
+# Mettre un titre ? -CG
+life_table48 #Si tu veux l'afficher -CG
 
 ```
-#####     esssayer lechelle logarithmique pour les qx !!!!!!!!
 
+###COMMENTER
 
-### reagdrter que homme eet femme pas both !
+Pour l'année 1948, le taux de mortalité est globalement le même pour tout les pays considérés. La mortalité infantile est non négligeable, répartie entre 8% pour l'Espagne à environ 2% en Suède, mais passé les deux premières années de vie, il est très peu probable de mourir jeune. Avant 45 ans, le risque pour tout les pays est inférieur à 1%. Cependant, passé cet âge, le taux de mortalité va commencer à croître de manière importante atteignant 10% vers 75 ans, pour être supérieur à 40% pour les plus de 105 ans, pour l'ensemble des pays.
+
+##PLOT EU/USA Qx ratio, Year 1948, Age, filter by Countries
 ```{r}
 
-life_table48 %>%filter( Year==1948 ,Country!="USA")%>%
+life_table48EUUSA <- life_table %>% filter(Year==1948, Country!="USA") %>%
   ggplot() +
-  geom_line(mapping = aes(y= qx/filter(life_table48,Country=="USA")$qx , x= Age,col= Country)) 
+  geom_point(mapping = aes(y= qx/filter(life_table, Year== 1948, Country=="USA")$qx , x= Age ,col= Country), alpha = 0.35) +
+  labs(y = "Eu Country/USA Qx Ratio") +
+  geom_hline(yintercept = 1)
+
+#J'ai corrigé cette partie, y'avais des erreurs de code pour plot correctement. -CG
+#VERIFIE QUE MA FORMULE Y EST CORRECTE, APRIORI LE GRAPHE A DU SENS -CG
+life_table48EUUSA  #Si tu veux plot -CG
 ```
-for each europpeen countries => on remarque que le Spain a un taux de mortalite plus eleve que le taux de mortalite que les etas unis et ils ont le tc de mortailité le plus iomportant en la comparant avec les usa par rapport au autre pays europpeen avant 30 ans ( à verifier la date)
-mais a partir de 45 ans tous les qx1 euro / qx usa < 1 donc ils ont un tx de moratlity plus faibles que usa et donc les gens vivent plus longtemps 
 
-# interpreter 
+###COMMENTER
 
-regarder la decroissance au niveau de 0 (c'est bizartre car fct de repartioiton ): lers nvea nées crevent plus rapidement ! 
-
-
--faire des comparaison en fonction du pays qui est plus et qui est moins apres 60ans 
-et constyater avant 60 ans que cest la mm chose 
+La mortalité chez les nouveaux nés jusqu'aux trentenaires est beaucoup plus élevée en Europe qu'aux Etats-Unis, en particulier en Italie et en Espagne et dans une certaine mesure en France. Cependant, ce ratio converge assez rapidement vers 1 quand l'Age augmente. Un sursaut est remarquable entre 20-30 ans, mais passé la trentaine, le ratio semble se stabiliser vers 1, D'abord inférieur à 1 de 30 à 80 ans, il est quasiment égal à 1 (légèrement au dessous ou au dessus) à partir des 90 ans, pour l'ensemble des pays d'Europe considérés.
+Le taux de mortalité chez les jeunes aux Etats-Unis est donc plus faible qu'en Europe, mais il tend à être égal avec les autres pays quand les gens vieillissent.
 
 
 
-#manque extraire le quptient de mortality des usa et deseurope et interpreter
+#5 Death Rate Evoution since WWII
 
-# 5 death rate evolution 
-
+##PLOTS AND FACET
 ```{r}
-(ggplot(data = filter(life_table, Year == seq(1946,2016,10) ) )+
-   aes(x = Age, 
-      y = qx, 
-      shape = Gender, 
-      frame = Year,
-      col = Country) +
-   geom_line() +
-  theme(legend.position = "none") +
-  labs(title= "mortality ratio % Gender", x = "age", y = "qx")
-   ) %>% 
-  plotly::ggplotly(height = 500, width=750)
+life_tablePer10 <- life_table %>% filter(Gender!="Both", Year %in% seq(1946,2016,by=10))  %>%
+   ggplot() +
+   geom_point(mapping = aes(x = Age, y = qx, col = as.factor(Year), shape = Gender), alpha = 0.35)
 
-
-```
-```{r}
-theme_set(theme_bw())
-ggplot(data = filter(life_table, Year == seq(1946,2016,10))) +
-  geom_line(aes(x = Age, 
-                 y = qx, 
-                 color = Country))   +
-  labs(title= "mortality ratio", x = "age", y = "qx") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1)) +
-  facet_grid(Gender~Country, scales = 'free')
-
+life_tablePer10Wrap <- life_tablePer10 + facet_wrap(Country ~ Gender)
+#On les affiche
+life_tablePer10
+life_tablePer10Wrap
 ```
 
+##Ratio_Mortality
 ```{r}
 ratio_mortality_rates <- function(df,
                                   reference_year=1946,
                                   target_years=seq(1946, 2016, 10)){
   df1 = df %>%
-    filter( Year == target_years) %>%
+    filter(Year %in% target_years) %>%
     group_by(Country, Year, Age, Gender) %>%
     select(Year, Age , qx , Country , Gender) 
   
   df2 = df %>%
     filter(Year == reference_year) %>%
     group_by(Country, Year, Age, Gender) %>%
-    mutate(qx.ref_year = qx )
+    rename(qx.ref_year = qx )
   
   
-  return(  inner_join(df1,df2, by= c("Country"  , "Age" , "Gender")))
+  return(select(inner_join(df1,df2, by= c("Age", "Gender", "Country")), Year.x, Age, qx, qx.ref_year, Country, Gender))
 }
 
-test <- ratio_mortality_rates(life_table, reference_year = 1946 , target_years = c(1946,2016))
+rm_Table <- ratio_mortality_rates(life_table, reference_year = 1946 , target_years = seq(1946,2016,10))
+
+#On l'affiche 
+rm_Table
 ```
-
-
-
-
-
-
-# 6 Trends 
-
-
+##PLOT Ratio_Mortality
 
 ```{r}
+rm_TablePerRef <- rm_Table %>% filter(Gender!="Both", Year.x %in% seq(1956,2016,by=10))  %>%
+   ggplot() +
+   geom_point(mapping = aes(x = Age, y = qx/qx.ref_year, col = as.factor(Year.x), shape = Gender), alpha = 0.35)
+
+rm_TablePerRef10Wrap <- rm_TablePerRef + facet_wrap(Country ~ Gender)
+#On les affiche
+rm_TablePerRef
+rm_TablePerRef10Wrap
+```
+##COMMENTER
+
+Avec ces graphiques, on remarque qu'il est beaucoup moins probable de mourir en bas âge qu'en 1946 avec le ratio inférieur à 1 pour tout les pays. En grandissant, ce risque décroit fortement au fûr et à mesure des décennies, et ceux pour tout les pays : Le ratio est d'environ 0.35 à 60 ans en moyenne sur les pays en 2016, il était à environ 0.55 en 1996 et d'environ 0.8 en 1956. 
+
+
+A VOIR SI ON PEUT AMELIORER - CG
+
+
+#6 Trends 
+
+
+##PLOT ET COMMENT
+```{r}
 life_table %>%
-  filter(Age == c(0,1,5), Gender != "Both") %>%
+  filter(Age %in% c(0,1,5), Gender != "Both") %>%
   ggplot(mapping = aes (x = Year , y=qx , col = as.factor(Age))) +
   geom_line()+
-  facet_grid(Gender~Country, scales = 'free')
+  facet_grid(Country~Gender, scales = 'free')
 ```
+IL FAUT COMMENTER -CG LA PREMIERE ANNEE AVAIT DE HAUT RISQUE DE DECEDER PARTICULIEREMENT ELEVE EN EUROPE, CA SE NULLIFIE A PARTIR DES ANNEES APRES LA DEUXIEME GUERRE MONDIALE.
 
+##PLOT ET COMMENT
 ```{r}
 life_table %>%
-  filter(Age == c(15,20,40,60)) %>%
+  filter(Age %in% c(15,20,40,60)) %>% #Exclure Gender Both ?
   ggplot(mapping = aes (x = Year , y=qx , col =as.factor(Age))) +
   geom_line()+
-  facet_grid(Gender~Country, scales = 'free')
+  facet_grid(Country~Gender, scales = 'free')
 
 ```
-# 7 rearangement 
+IL FAUT COMMENTER -CG /!\ REMARQUER CHEZ LES HOMMES LES PICS AVEC LES GUERRES MONDIALES POUR ANGLETERRE, FRANCE ET ITALIE/!\
 
+#7 Rearrangement 
 ```{r}
 
-
-life_table_pivot<-life_table %>%
-  select(qx,Age,Country,Year,Gender) %>%
-  pivot_wider(names_from = Age , values_from = qx)
-
-
-#life_table_pivot %>%
- # group_by(Country) %>%
-  #summarise(e_0 = mean(life_table_pivot$`0`)
+life_table_pivot <- life_table %>%
+  select(Country, Gender, Year, Age, qx) %>%
+    pivot_wider(
+      id_cols = c("Country","Gender","Year"),
+      names_from = Age,
+      values_from = qx
+    )
   
+```
+
+
+Calcul de l'esperance d vie d'une popuilation selon une anné&e A;
+
+```{r}
+fun <- function(x) {return(1-identity(x))}
+life_exp <- life_table_pivot %>%
+  select (-Gender, -Year , -Country) %>%
+  apply(MARGIN = 1, FUN = fun)%>%
+  t() %>%
+  apply ( MARGIN = 1 , cumprod) %>%
+  t() %>%
+  apply(MARGIN =  1, sum) %>%
+  cbind(life_table_pivot)
+
+
+names (life_exp )[1] <- "e0x" 
+life_exp[1] <- life_exp[1] + 0.5
+
+foo %>%
+  ggplot() +
+  aes(x=Year , y =ex) +
+  geom_line()
+
+
+life_exp <- life_exp[,-c(5:114)]
+life_exp %>%
+  glimpse()
 
 ```
 
+
+
+
+
+
+# Regarder la periode de la  peste 1720
+
+# 1832 / 1850 a pairs cholera (1832)
+
+# 1870 / 1860 guerre ext et guerre civile => toucvhe homme et femme 
