@@ -1,0 +1,291 @@
+\documentclass{article}
+\usepackage{latexsym} % in order to use \Box
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphics}
+\usepackage{graphicx}
+\usepackage{shadow}
+\usepackage[french]{babel}
+\usepackage{enumerate}
+\usepackage{pst-all}
+\usepackage{alltt}
+\usepackage{dsfont}%pour fonction indicatrice
+\usepackage{fourier-orns}%pour le symbole attention
+\usepackage{mathabx}%pour le symbole enter
+\usepackage{bbm}%pour fonction indicatrice
+\usepackage{manfnt}%pour le symbole virage dangereux syntaxe \textdbend
+%\usepackage{custom}%venn
+\usepackage{tikz}%pour dessiner un cube de sommets nommés et venn diagrams.
+\usetikzlibrary{shapes,backgrounds}%venn diagrams
+\usepackage{xcolor}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\usepackage{makeidx}%pour faire un index
+\makeindex%pour faire un index. Pour cr\'eer de nouveaux mots pour l'index : Bernoulli\index{Bernoulli}, {\bf continue}\index{continuite@continuit\'e} puis Latex, puis Tex, Make Index. Ne pas oublier à la fin du fichier .tex l'instruction \printindex%Pour imprimer l'index. \index{}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+
+\textwidth=14cm
+%\hoffset=-1.4cm
+\def\nl{\newline}
+\def\no{\noindent}
+\def\R{\mathbb{R}}
+\def\N{\mathbb{N}}
+\def\C{\mathbb{C}}
+\def\Z{\mathbb{Z}}
+\def\Q{\mathbb{Q}}
+\def \norme#1{\Vert #1 \Vert}
+\def\[{[\![}%crochet double ouvrant
+\def\]{]\!]}%crochet double fermant
+\hyphenation{appar-te-nant}
+\def\ffg{\fg\,\,}% pour laisser un espace apr\`es la fermeture des guillemets
+%par exemple \og{\it pile}\ffg
+\def\dsp{\displaystyle}
+\def\gq{\geqslant}
+\def\lq{\leqslant}
+\def\v4{\vspace{0.4cm}}
+\def\pr{{\bf P}}
+\def\hk{\hookrightarrow}
+\def\Llr{\Longleftrightarrow}
+\def\[{[\![}% crochet double ouvrant
+\def\]{]\!]}% crochet double fermant
+\def\dsp{\displaystyle}
+\def\gq{\geqslant}
+\def\lq{\leqslant}
+\def\v4{\vspace{0.4cm}}
+\def\be{\begin{enumerate}}
+\def\ee{\end{enumerate}}
+\def\bea{\begin{enumerate}[a)]}
+\def\eea{\end{enumerate}}
+\def\ca{\mbox{\rm card}}
+%\pagestyle{empty}
+%Exemple :
+%bea
+%\item Youpi !
+%\item Et alors ?
+%\eea
+\def\pr{{\bf P}}
+\def\hk{\hookrightarrow}
+\def\Llr{\Longleftrightarrow}
+
+\def\dan{\noindent\danger\ }
+\def\vhv{\vspace{0.4cm}\hrule\vspace{0.4cm}}
+
+\newcommand\raisepunct[1]{\,\mathpunct{\raisebox{0.5ex}{#1}}}%pour symbole de ponctuation après les fractions. Syntaxe:$...\raisepunct{.}$
+
+
+\begin{document}
+
+
+
+\vspace{1.0cm}
+
+\shabox{\centerline{\bf\large Commentaires sur le projet}}
+%Raisonnement, vocabulaire ensembliste et d\'enombrement}}
+
+\vspace{1.0cm}
+
+
+\noindent Le fichier source est {\tt full\_life\_table.Rds}, extrait de {\tt http://www.mortality.org}
+
+\vspace{0.4cm}
+
+\noindent Il contient un tableau de 379\,170 lignes et 12 colonnes, de type {\tt data\_frame} et de classe list, contenant nombres et caractères.
+
+\vspace{0.4cm}
+
+\noindent Cette table de vie porte sur la décennie 1816 à 2017. Pour chaque année, on s'intéresse aux classes $\left([x,x+1]\right)_{0\lq x\lq 109}$. On fait donc l'hypothèse d'une espérance de vie n'excédant pas $\lq 110$ ans.
+
+\vspace{0.4cm}
+
+\noindent Notons que cette hypothèse est réaliste car le nombre actuel de personnes atteignant au moins 110 ans, on parle alors de supercentenaires, s'établit entre 300 et 450 dans le monde sur une population mondiale de 7,6 milliards d'individus, soit seulement 1 personne sur 20 millions !
+
+\setcounter{section}{2}
+
+\section{Signification des 12 colonnes du tableau}
+
+\begin{itemize}
+
+\item Year : année d'étude.
+
+\item Age : contient un entier $x$ entre $0$ et $109$ qui est la borne gauche de la tranche d'âge $[x,x+1]$ à laquelle on s'intéresse.
+
+\item $m(x)$ : Taux de mortalité central à l'âge $x$..
+
+\item $q(x)$ : Probabilité conditionnelle de décès dans la tranche d'âge $[x,x+1]$ pour une personne ayant vécu jusqu'à l'âge $x$ au moins.
+
+\item $a(x)$ : Durée moyenne de survie dans la tranche d'âge $[x,x+1]$ pour les personnes décédées dans l'intervalle.
+
+\item $\ell(x)$ : Nombre de survivants à l'âge exact $x$ dans une cohorte fictive de $100\,000$ personnes ($\ell(0) = 100\, 000$).
+
+\item $d(x)$ : Nombre de décès entre les âges $x$ et $x+1$.
+
+\item $L(x)$ : Nombre d'années-personnes vécues entre les âges $x$ et $x+1$.
+
+\item $T(x)$ : Nombre d'années-personnes restantes après l'âge exact $x$.
+
+\item $e(x)$ : Espérance de vie résiduelle à l'âge exact $x$ (en années).
+
+\item Country : Pays étudié.
+
+\item Gender : Sexe de la population étudiée : hommes, femmes ou les deux.
+
+\end{itemize}
+
+
+\subsection{Formules}
+
+\noindent Les formules suivantes permettent de construire la table de mortalité. Pour $x\in\N$ (sauf mention expresse du contraire), on a
+
+\vspace{0.4cm}
+
+\noindent On s'intéresse à des cohortes fictives d'effectif
+
+$$\ell_0=100\,000\ \ \mbox{\rm personnes}\eqno{(1)}$$
+
+$$d(x)=q(x)\times \ell(x)\ \ \mbox{\rm soit}\ \ q(x)=\frac{d(x)}{\ell(x)} \eqno{(2)}$$
+
+$$\ell(x+1)=\ell(x)-d(x)=\ell(x)-q(x)\times \ell(x)=\ell(x)\times\left(1-q(x)\right) \eqno{(3)}$$
+
+$$\ell(x)=\sum_{k=x}^\infty d(k) \eqno{(4)}$$
+
+$$L(x)=\frac{\ell(x)+\ell(x+1)}{2}=\frac{\ell(x)\times\left(2-q(x)\right)}{2}=\ell(x)-0,5\times d(x)\ \ \mbox{pour $x\gq 1$} \eqno{(5)}$$
+
+$$T(x)=\sum_{k=x}^\infty L(k)=0,5\times \ell(x)+2\sum_{k=x+1}^\infty \ell(k) \eqno{(6)}$$
+
+$$L(x)=T(x)-T(x+1) \eqno{(7)}$$
+
+$$e(x)=\frac{T(x)}{\ell(x)}=\left\{
+                              \begin{array}{l}
+                                \dfrac{\displaystyle\sum_{k=x}^\infty L(k)}{\ell(x)}\\
+                                 \\   
+                                0,5+\dfrac{\displaystyle\sum_{k=x+1}^\infty \ell(k)}{\ell(x)}\\
+                                  \\
+                                0,5+\displaystyle\sum_{k=x}^\infty \displaystyle\prod_{i=x}^k \left(1-q(i)\right)\\
+                              \end{array}
+                            \right.\eqno{(8)}$$
+%\frac{\sum_{k=x}^\infty L(k)}{\ell(x)}=0,5+\frac{\sum_{k=x+1}^\infty \ell(k)}{\ell(x)} \eqno{(8)}$$
+
+%$$q(x)=\frac{m(x)}{1+(1-a(x))\times m(x)}=\left\{
+%                                            \begin{array}{ll}
+%                                              \dfrac{m(0)}{1+(1-a(0))\times m(0)} & \hbox{si $x=0$} \\
+%                                               & \\
+%                                              \dfrac{m(x)}{1+0,5\times m(x)} & \hbox{si $x\gq 1$}
+%                                            \end{array}
+%                                          \right. \eqno{(9)}$$
+
+%$$a(x)=\left\{
+%         \begin{array}{ll}
+%           0,5 & \hbox{si $d(x)=0$} \\
+%            &  \\
+%            \frac{L(x)-\ell(x+1)}{d(x)}& \hbox{si $d(x)>0$}
+%         \end{array}
+%       \right. \eqno{(10)}$$
+
+%$$e(x+1)=\dfrac{e(x)-1+0,5\times q(x)}{1-q(x)}\eqno{(11)}$$
+
+
+
+\setcounter{section}{3}
+
+\section{Pays occidentaux en 1948}
+
+
+\subsection{Interprétation des coefficients de mortalité pour tous les pays}
+
+\noindent On constate que les courbes de mortalité en 1948 des 7 pays étudiés ont toutes les mêmes tendances : une mortalité infantile assez importante chez les nourissons avant leur 1er anniversaire (entre 3 et 7\%). On peut y voir des raisons socio-économiques, l'absence de sensibilisation aux mesures nécessaires d'hygiène et l'absence de politique de santé publique à cette date (mouvement français de planning familial crée en 1960 et ministère français de la famille en 1968). Au-delà de 60 ans, l'accroissement des quotients devient plus important.
+
+\vspace{0.4cm}
+
+\noindent Pour comparaison, le taux de mortalité infantile en France avant 1 an (garçons et filles) en 1948 était de 58,4 pour 1000. En 2020, il était de 3,6 pour 1000.\newline\noindent (source : \url{https://www.insee.fr/fr/statistiques/2383444}).
+
+
+\subsection{Pays européens contre Etats-Unis}
+
+\noindent\textdbend\textcolor{red}{Attention !} Cette interprétation concerne le graphique moyenne des coefficients de mortalité en Europe contre coefficient de mortalité aux USA.
+
+\vspace{0.4cm}
+
+\noindent La courbe des ratios appelle $3$ conclusions :
+
+\begin{itemize}
+
+\item de 0 à 35 ans, le ratio varie entre 1 et 2,8 (!) : par exemple, la probabilité de décès entre 25 et 26 ans pour un européen est 1,5 fois plus élevée que celle d'un américain.
+
+\item Entre 35 et 75 ans, ce ratio est $<$ à 1.
+
+\item et au-delà des 75 ans, ce ratio semble proche de 1. Un décès en 1948 à cet âge dans l'un des pays occidentaux sous-entend que la personne n'a pas pris part à la guerre sur les champs de bataille (ou que ses combats ont revêtu d'autres formes).
+
+\end{itemize}
+
+\subsection{Conclusions}
+
+\begin{itemize}
+
+\item Au lendemain de la seconde guerre mondiale, l'Europe est un continent dévasté avec une proportion importante de blessés tandis que les Etats-Unis n'ont pas connu de combats sur leur territoire. Ceci explique la mortalité accrue en Europe par un plus grand nombre de blessés (beaucoup de fronts de combats) entre 0 et 35 ans.
+
+\item Cependant, les coefficients de mortalité s'harmonisent : on peut y voir plusieurs facteurs explicatifs :
+
+\begin{enumerate}[a)]
+\item Création de l'OMS le 7 avril 1948 (constitution adoptée en 1946 par 61 états membres) : \og La santé de tous les peuples est une condition fondamentale de la paix du monde et de la sécurité; elle dépend de la coopération la plus étroite des individus et des États.\ffg (extrait du préambule de sa Constitution).
+
+\item On note qu'entre 2 ans et 55 ans environ, les quotients de mortalité sont faibles. On peut corréler cela aux progrès de la médecine, aux campagnes de santé publique et à l'absence de conflits armés en Europe Occidentale et aux Etats-Unis.
+\end{enumerate}
+
+\end{itemize}
+
+\section{Evolution des quotients de mortalité depuis la 2nde guerre mondiale}
+
+\noindent Au premier abord, on pourrait dire que les 14 courbes se ressemblent (7 pays et 1 caractère de genre). Cependant une analyse plus fine en lisant chaque ligne du graphe montre que les coefficients de mortalité augmentent plus tôt chez les hommes (sous-représentativité des femmes dans le marché de l'emploi : rappelons qu'avant 1965 une femme mariée ne pouvait ouvrir un compte bancaire ou signer un contrat de travail sans l'autorisation de son époux). La pénibilité et la dureté de certains métiers masculins est grande (métiers de la sidérurgie, de la pêche et de l'extraction minière,...).
+
+\vspace{0.4cm}
+
+\noindent Cependant, si l'on compare 1946 et 2016, les statistiques montrent bien évidemment une amélioration de toutes les espérances de vie dont les raisons sont multiples :
+
+\begin{itemize}
+\item amélioration des conditions matérielles de vie dans les pays occidentaux,
+\item le travail est moins pénible physiquement avec baisse du nombre d'heures de travail,
+\item tertiarisation de l'économie,
+\item meilleur accès aux soins,
+\item progrès de la médecine (en particulier dans les maladies respiratoires et dans le traitement de certains cancers),
+\item plus grande attention des individus à leur santé, hygiène et alimentation,...
+\end{itemize}
+
+
+\section{Tendances}
+
+\noindent Les tendances sont identiques : les quotients de mortalité baissent tous en fonction du temps.
+
+\vspace{0.4cm}
+
+\noindent Pour les enfants de moins 5 ans, la baisse est plus importante (dûs aux progres de la vaccination et des mesures dd'hygiène). Les courbes sont presque identiques avec les mêmes pics. \`A l'âge de 5 ans, les quotients sont presque nuls.
+
+\vspace{0.4cm}
+
+\noindent Pour les âges 15, 20, 40 et 60, les pentes des droites de regréssion sont plus faibles que celles des enfants. La baisse est plus importante chez les femmes. Certains pics s'expliquent par les 2 guerres mondiales et les épidémies (par exemple, épidémies de choléra en Europe en 1831, 1848, 1853, 1865,... et de peste en 1900 à Marseille et San-Francisco,...).
+
+\section{Réarrangement}
+
+\noindent{\it \`A commenter}
+
+
+\section{Espérance de vie}
+
+\noindent Nous avons écrit un script à l'aide de la formule $(8)$.
+
+\section{ACP et SVP sur les tables de log-mortalité}
+
+\noindent{\it \`A commenter}
+
+\section{Modèle de Lee-Carter pour la mortalité aux \'Etats-Unis}
+
+\noindent{\it \`A commenter}
+
+
+
+
+
+
+\centerline{***}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
