@@ -445,5 +445,189 @@ USm <- demogdata(data = t(uSA),
 
 
 
+
 ```
+
+# Lee carter iterative fit 
+minimising loss function 
+-> fixing one of the parmeters and try to estimate otheerts 
+```{r}
+library(dplyr)
+library(ggplot2)
+usa <- life_table %>%
+  filter(Country == 'USA')
+usa_male <- usa %>%
+  filter(Gender == 'Male')%>%
+  head()
+usa_female <- life_table %>%
+  filter(Country == 'USA',Gender == 'Female')%>%
+  head()
+usa_both <- life_table %>%
+  filter(Country == 'USA',Gender == 'Both') %>%
+  head()
+  
+X <- model.matrix(
+  ~ as.factor(usa$Age)
+  -1
+)
+dim(X)
+
+y <- log(usa$qx)
+# -1 indicates that we would not want to put the general intercept inside of our model
+
+
+#analytic expr of beta_1 of our model 
+alpha_est_expl <- solve(
+              crossprod(X)) %*%
+                t(X) %*% y #DIY
+
+alpha_est <- lm(
+          y ~ -1 +
+            as.factor(usa$Age))$coef #i want a specific age intercept and not an overall age intercept thats why i use as.factor
+#use lm(.) function
+#extract $coef from the fitted
+#lm(.) object
+
+#plot the resulting parameter estimate 
+
+
+plot(alpha_est ) 
+title("usa"); xlab = "age" ; ylab = "beta(1)"
+
+
+library(ggplot2)
+data <- tibble(age = 0:109, fit= alpha_est)
+g <- ggplot(data) + geom_point(aes(age,alpha_est)) +
+  geom_line(aes(age,alpha_est) , col = "black") +
+  theme_bw() +
+  ggtitle("Usa - filter 1933;1995") +
+  labs(y = bquote(hat(beta)[x]^"(1)"))
+g
+
+#on initialise le k_t(2) 
+#on cree la variable response Z_(x,t)
+#n'est pas oublier la dimension de la matrix design X quand on soustrait B_x(1)
+
+
+Z <- log(usa$qx) - alpha_est[usa$Age - min(usa$Age)+1]
+
+X <- model.matrix(~ as.factor(usa$Year) - 1)
+
+kappa_est_explicite <- solve(crossprod(X)) %*% t(X) %*% Z
+
+
+kappa_est <- lm(Z ~ -1 + as.factor(usa$Year))$coef
+
+#la on a juste intiialiser le kappa !
+
+start_year = min(usa$Year)
+end_year = max(usa$Year)
+data <- tibble(year = start_year:end_year, fit = kappa_est)
+
+g <- ggplot(data) + geom_point(aes(year,kappa_est)) +
+  geom_line(aes(year,kappa_est), col= "black") +
+  theme_bw() +
+  ggtitle("usa starting values") +
+  labs(y = bquote(hat(kappa)[t]^"(2)"))
+g
+
+
+#maintenant on intialise le b_x(2)
+
+var_kappa <- kappa_est[usa$Year - min(usa$Year) +1] #a numeric variable as the same length as Z
+
+# as.factor(usa$Age):var_kappa => we buiild the interation between this variale and an age-specific intercept
+
+X <- model.matrix( ~ as.factor(usa$Age):var_kappa -1)
+beta_est_expl <- solve(crossprod(X)) %*% t(X) %*% Z                            
+
+beta_est <- lm(Z ~ -1 + as.factor(usa$Age):var_kappa)$coef
+
+data <- tibble(age = 0:109 , fit = beta_est)
+g <- ggplot(data) + geom_point(aes(age,beta_est)) +
+  geom_line(aes(age,beta_est), col= "black") +
+  theme_bw() +
+  ggtitle("usa starting values") +
+  labs(y = bquote(hat(beta)[x]^"(2)"))
+g
+
+converged =F
+iter = 1 
+
+while(!converged) {
+  beta_est_old = beta_est    
+  kappa_est_old = kappa_est  
+  
+  # (2) : estimate kappa's 
+  var_beta = beta_est[usa$Age - min(usa$Age) +1]
+  X  =  model.matrix(~ as.factor(usa$Year):var_beta -1)
+  kappa_est = solve(crossprod(X)) %*% t(X) %*% Z
+  
+  #(3) : estimate beta's
+  var_kappa = kappa_est[usa$Year - min (usa$Year) +1]
+  X = model.matrix( ~as.factor(usa$Age):var_kappa -1)
+  beta_est  = solve(crossprod(X)) %*% t(X) %*% Z
+  
+  # stopping criterion
+  converged = max(abs(beta_est - beta_est_old) / abs(beta_est_old) , abs(kappa_est - kappa_est_old) / abs(kappa_est_old)) < 1e-8
+  iter = iter+ 1
+  if (iter %% 1e2 == 0)
+    cat("\n\n Iteration number ", iter , "\n\n")
+}
+
+#plot the initial estilmates and the parameter estimatees obtained after convergence #together on the same plot !!
+data <- tibble(age = 0:109 , fit = beta_est , init = beta_est_expl)
+  g <- ggplot(data) + geom_point(aes(age,fit)) +
+  geom_line(aes(age,fit), col= "black") +  
+  geom_line(aes(age,init), col= "red") +
+  theme_bw() +
+  ggtitle("usa starting values + final values") +
+  labs(y = bquote(hat(beta)[x]^"(2)"))
+g
+
+
+#we need to make sure the paramater estimates satisfy the (usual) set of Lee carter parameter constraints
+#thats is sum(k_t) de t>=0 = 0
+#sum surx (beta_x) = 1 
+
+
+beta_est_LS = beta_est / sum(beta_est)
+kappa_est_LS = (kappa_est - mean(kappa_est)) * sum(beta_est)
+alpha_est_LS = alpha_est + beta_est * mean(kappa_est)
+
+#final check
+sum(beta_est_LS)
+
+sum(kappa_est_LS)
+
+
+
+#plot beta 1 beta 2 et kappa 2
+dim(kappa_est_explicite)
+dim(kappa_est)
+data_period <- tibble(year = start_year:end_year , fit = kappa_est , init = kappa_est_explicite)
+data_age <- tibble(age = 0:109 , fit_alpha = alpha_est , fit_beta = beta_est)
+
+g_1 <- ggplot(data_age) + geom_point(aes(age,fit_alpha)) +
+  geom_line(aes(age,fit_alpha), col ="black") +
+  theme_bw() +
+  ggtitle("usa final estimates") +
+  labs(y = bquote(hat(beta)[x]^"(1)"))
+g_2 <- ggplot(data_age) + geom_point(aes(age,fit_beta)) +
+  geom_line(aes(age,fit_beta), col ="black") +
+  theme_bw() +
+  ggtitle("") +
+  labs(y = bquote(hat(beta)[x]^"(2)"))
+
+g_3 <- ggplot(data_period) + geom_point(aes(year,fit)) +
+  geom_line(aes(year,fit), col ="black") +
+  theme_bw() +
+  ggtitle("") +
+  labs(y = bquote(hat(kappa)[t]^"(1)"))
+gridExtra::grid.arrange(g_1,g_2,g_3 , ncol=2)
+
+plot(kappa_est)
+
+```
+
 
