@@ -239,6 +239,8 @@ ex_res_table <- function(df) {
   return(exp_res_life_table) 
 }
 
+Residual_Exp_life_table <- readr::read_rds("Residual_Exp_life_table.rds")
+
 #ALGORITHME TRES GOURMAND EN RESSOURCES A FAIRE TOURNER CHEZ MOI
 ```
 
@@ -253,86 +255,130 @@ ex_res_table <- function(df) {
 # 1870 / 1860 guerre ext et guerre civile => toucvhe homme et femme 
 
 #PCA et svd 
+#T T // F F // T F // F T à faire !!!!!!!!!!!
+
 
 ```{r}
+
+library(ggplot2)
 fr_pca_f <- life_table_pivot %>%
   filter(Country =='France' , Gender == 'Female' , Year %in% 1948:2010)
 fr_pca_f[,4:113] = log(fr_pca_f[,4:113])
 
 #Acp avec centrage et normalisation 
 
-results_avec_SN <- prcomp(fr_pca_f[, 3:113] , scale. = TRUE ,center = TRUE)
+resultsTT <- prcomp(fr_pca_f[, 3:113] , scale. = TRUE ,center = TRUE)
 
 
 #Acp sans centrage et normalisation 
-results_sans_SN <- prcomp(fr_pca_f[, 3:113] , scale. = FALSE ,center = FALSE)
+resultsFF <- prcomp(fr_pca_f[, 3:113] , scale. = FALSE ,center = FALSE)
+
+resultsTF <- prcomp(fr_pca_f[, 3:113] , scale. = TRUE ,center = FALSE)
+resultsFT <- prcomp(fr_pca_f[, 3:113] , scale. = FALSE ,center = TRUE)
+
+
 
 #reverse the signs
-results_avec_SN$rotation <- -1 * results_avec_SN$rotation
-results_sans_SN$rotation <- -1 * results_sans_SN$rotation
+resultsFF$rotation <- -1 * resultsFF$rotation
+resultsTT$rotation <- -1 * resultsTT$rotation
+resultsTF$rotation <- -1 * resultsTF$rotation
+resultsFT$rotation <- -1 * resultsFT$rotation
+
+
+
 
 #display principal components
-results_avec_SN$rotation %>%
+resultsFF$rotation %>%
   head(sample= n(4))
 
-results_sans_SN$rotation %>%
+resultsTT$rotation %>%
+  head(sample= n(4))
+resultsTF$rotation %>%
+  head(sample= n(4))
+resultsFT$rotation %>%
   head(sample= n(4))
 
 
 #reverse the signs of the scores
-results_avec_SN$x <- -1*results_avec_SN$x
-results_sans_SN$x <- -1*results_sans_SN$x
+resultsTT$x <- -1*resultsTT$x
+resultsFF$x <- -1*resultsFF$x
+resultsTF$x <- -1*resultsTF$x
+resultsFT$x <- -1*resultsFT$x
+
 
 #display the first six scores
-head(results_avec_SN$x)
-head(results_sans_SN$x)
+head(resultsTT$x)
+head(resultsFF$x)
+head(resultsTF$x)
+head(resultsFT$x)
 
 
-summary(results_avec_SN)
-summary(results_sans_SN)
+summary(resultsTT)
+summary(resultsFF)
+summary(resultsTF)
+summary(resultsFT)
 
 
-
-
-
-
-
-par(mfrow=c(1,2)) 
-biplot(results_avec_SN, scale = TRUE)
-biplot(results_sans_SN)
+#commenter tous les graphiques 
 
 
 
 
 
-#use factoshiny 
+#rajouter le screplot ! 
 
-res.PCA<-PCA(fr_pca_f,quali.sup=c(1,2),graph=FALSE,scale.unit = T)
-res.PCA2<-PCA(fr_pca_f,quali.sup = c(1,2) , graph = FALSE , scale.unit = F)
-plot.PCA(res.PCA,choix='var',title="Graphe des variables de l'ACP")
-plot.PCA(res.PCA,title="Graphe des individus de l'ACP")
+s1 <- fviz_eig(resultsTT)
+s2 <- fviz_eig(resultsFF)
+s3 <- fviz_eig(resultsTF)
+s4 <- fviz_eig(resultsFT)
 
+gridExtra::grid.arrange(s1,s2,s3,s4,ncol=2,nrow=2)
 
-summary(res.PCA2)
-summary(res.PCA)
-par(mfrow = c(2,2))
-
-plot.PCA(res.PCA,choix='var',title="Graphe des variables de l'ACP")
-plot.PCA(res.PCA,title="Graphe des individus de l'ACP")
-plot.PCA(res.PCA2,choix='var',title="Graphe des variables de l'ACP")
-plot.PCA(res.PCA2,title="Graphe des individus de l'ACP")
-```
-
-
-```{r}
-Factoshiny::Factoshiny(life_table_pivot)
+ss1 <- fviz_pca_var(resultsTT , col.var = "contrib" , gradient.cols = c("red" , "black" , "yellow") , 
+                    repel=TRUE)
+ss2 <- fviz_pca_var(resultsFF , col.var = "contrib" , gradient.cols = c("red" , "black" , "yellow") , 
+                    repel=TRUE)
+ss3 <- fviz_pca_var(resultsTF , col.var = "contrib" , gradient.cols = c("red" , "black" , "yellow") , 
+                    repel=TRUE)
+ss4 <- fviz_pca_var(resultsFT , col.var = "contrib" , gradient.cols = c("red" , "black" , "yellow") , 
+                    repel=TRUE)
+gridExtra::grid.arrange(ss1,ss2,ss3,ss4,ncol=2,nrow=2)
 
 
-res.PCA<-PCA(life_table_pivot,quali.sup=c(1,2),graph=FALSE)
-plot.PCA(res.PCA,choix='var',title="Graphe des variables de l'ACP")
-plot.PCA(res.PCA,title="Graphe des individus de l'ACP")
+f1<-fviz_pca_biplot(resultsTT,repel = TRUE ,col.var = "Grey" ,col.ind = "Blue")
+f2<-fviz_pca_biplot(resultsFF,repel = TRUE ,col.var = "Grey" ,col.ind = "Blue")
+f3<-fviz_pca_biplot(resultsTF,repel = TRUE ,col.var = "Grey" ,col.ind = "Blue")
+f4<-fviz_pca_biplot(resultsFT,repel = TRUE ,col.var = "Grey" ,col.ind = "Blue")
 
-summary(res.PCA)
+gridExtra::grid.arrange(f1,f2,f3,f4, ncol= 2, nrow = 2)
+
+
+#motivez choix choix des axes => 
+
+#- regarder la repartition de la variance suivant les cas  -> plot du cours 
+#- rendre comparable les variables qui ont des variances differnentes ! 
+
+
+
+#tous les pays et tous les sexes 
+resultsTT_ALL <-prcomp(life_table_pivot[, 3:113] , scale. = TRUE ,center = TRUE)
+resultsTT_ALL$rotation <- -1 *resultsTT_ALL$rotation
+resultsTT_ALL$x <- -1 *resultsTT_ALL$x
+
+par (mfrow = c(1,2))
+biplot(resultsTT_ALL)
+biplot(resultsTT)
+
+# commenter wtf ???
+
+
+
+# biplot (differnets pays et sexes )
+#a faire !!!!!!
+#Combinez les biplots pour différents pays (pour chaque sexe). Commentaire
+#groups1 <- c("Male","Female","Both")
+#groups2 <- c("France","Spain","Italy","USA","Netherlands","Sweden","UK")
+#fviz_pca_biplot(resultsTT_ALL, col.ind = groups1 , col.var = groups2)
 
 ```
 
@@ -346,67 +392,8 @@ library(forecast)
 install.packages("lifecontingencies")
 library(lifecontingencies)
 ```
-```{r}
-library(tidyverse)
-```
-
-```{r}
-dplyr::filter(life_table, Country == 'USA' , Year %in% 1933:1995)
-
-life_table%>%
-  dplyr::filter(Country=='USA' , Year %in% 1933:1995 ,Gender =='Both') %>%
-  mutate(qxlog = log(qx)) %>%
-  dplyr::select(Year,Age,Country,qx)
 
 
-USAdemo<-hmd.mx(country="USA", username="skanitoombk@gmail.com",
-password="1638011058", label="USA")
-
-italyDemo
-
-
-par(mfrow=c(1,3))
-plot(USAdemo,series="male",datatype="rate", main="Male rates")
-plot(USAdemo,series="female",datatype="rate", main="Female rates")
-plot(USAdemo,"total",datatype="rate", main="Total rates")
-
-
-
-italyLcaM<-lca(USAdemo,series="male",max.age=100)
-italyLcaF<-lca(USAdemo,series="female",max.age=100)
-italyLcaT<-lca(USAdemo,series="total",max.age=100)
-
-
-
-years.fit = 1933 :1995
-
-
-
-lca(USAdemo) %>%
-  summary()
-
-
-
-```
-
-```{r}
-
-
-library(demography)
-
-USAdata <- hmd.mx(country = "USA" , username = "skanitoombk@gmail.com" , password = "1638011058")
-USAdata
-
-plot(USAdata, series = "male")
-USAmale <- StMoMoData(USAdata ,series ="male")
-
-years.fit <- 1933:1995
-LCfit <- fit(lc() , data = USAmale, years.fit= years.fit)
-
-plot(LCfit)
-
-
-```
 ```{r}
 # je veux une matrice row = time , col =age 
 
@@ -426,14 +413,29 @@ library(reshape2)
 #filtrer life table a usa et selectioner uniquement les dx et qx et age et year 
 #esssayer d'avoir une matrice de la meme dimensiion que life table pivot fiotre aux USA 
 
+pivot_life_lx <- function(life_table) {
+life_table_pivot <- life_table %>%
+  select(Country, Gender, Year, Age, lx) %>%
+    pivot_wider(
+      id_cols = c("Country","Gender","Year"),
+      names_from = Age,
+      values_from = lx
+    )
+return (life_table_pivot)
+}
+library(tidyverse)
+l__x <- pivot_life_lx(life_table)
+l__x =filter(l__x , Country == 'USA')
+l__x %>%
+  select(-Gender, -Country)
+#zessayer avec lx !
+Exp <- life_table$lx
 
+#créer un life table pivot avec lx de mm dim que life_pivot _qx
+pop <- acast(l__x,Age~Year,)
 
-Exp <- 
-
-pop <- acast(Exp,Age~Year,value.var = "Male")
-
-USm <- demogdata(data = t(uSA), 
-                 pop = pop, 
+USm <- demography::demogdata(data = t(uSA), 
+                 pop = t(l__x), 
                  ages = as.integer(rownames(t(uSA))), 
                  years= as.integer(colnames(t(uSA))), 
                  type = "mortality", 
@@ -441,7 +443,7 @@ USm <- demogdata(data = t(uSA),
                  name = "male")
 
 
-
+lc()
 
 
 
@@ -455,7 +457,7 @@ minimising loss function
 library(dplyr)
 library(ggplot2)
 usa <- life_table %>%
-  filter(Country == 'USA')
+  filter(Country == 'USA', Year %in% 1933:1995)
 usa_male <- usa %>%
   filter(Gender == 'Male')%>%
   head()
@@ -630,4 +632,114 @@ plot(kappa_est)
 
 ```
 
+
+
+# LEe carter avec SVD
+```{r}
+
+Years <- 1933:1995
+Age <- 1:110
+
+m<- filter(life_table_pivot , Country == 'USA' ,Gender == 'Both', Year %in% Years) %>%
+  select(-Gender,-Country,-Year)
+m<- log(m)
+n.x = nrow(m) # 63
+n.y = ncol(m) # 110
+
+m_mat <- as.matrix(m, nrow = n.y, ncol = n.x) # 110 X 63
+plot(m_mat[,1], type = "l") #mortality of all ages in year 1933
+# Mean log mortality for all age groups under consideration (Age)
+a_age <- colMeans(m_mat)
+lines(y = Age, x = a_age, col = 2)#average mortality for all age groups
+
+# plotting mortality for Age = 65 as a trial run to see if code is working
+# as exxpected
+plot(x = Years, y = m_mat[,65], pch = 18, xlab = "Years", ylab = "log m", col = 2) #working!!!
+
+# Average mortality across each year
+a_year <- rowMeans(m_mat)
+
+#We need to estimate parameters ax, bx and kt of the Lee-Carter model
+# ax is the avg of log mortality rates over time. ie sum(log m)/n.y
+# avg of log rates -> a_hat <- rowSums(m)/94
+# Subtracting a from all years in m_mat
+m_hat <- matrix(1, nrow = n.x, ncol = n.y) #Dummy matrix with dim 94 X 111
+m_hat <- t(m_mat)
+m_mat <- t(m_mat)
+for(i in 1:n.y) m_hat[,i] <- m_mat[,i] - a_age[i]
+m_hat <- m_hat[,1:110]
+age_mod <- 1:110
+#SVD
+svd_ <- svd(m_hat,1,1)
+v <- svd_$v
+u <- svd_$u
+d <- svd_$d
+
+b <- v/sum(v)
+k <- u * sum(v) * d[1]
+fit_1 = a_age[age_mod] + (b * k[1])
+plot(x = age_mod, y = m_mat[1,age_mod], pch = 19, xlab = "Age", ylab = "m")
+lines(x = age_mod, y = fit_1, col = 2, lwd = 2, xlab = "Age", ylab = "m")
+
+fit_end <- a_age[age_mod] + (b * k[63])
+plot(x = age_mod, y = m_mat[63,age_mod], pch = 18)
+lines(x = age_mod, y = fit_end, col = 2, lwd = 2)
+
+#Plotting parameter
+par(mfrow = c(2,2))
+plot(x = Years, y = k, type = "l")
+plot(x = age_mod, y = a[age_mod], type = "l", xlab = "Ages", ylab = "ax")
+plot(x = age_mod, y = b[age_mod], type = "l", xlab = "Ages", ylab = "bx" )
+#plotting m over "Years"
+plot(x = Years, y = m_mat[,1], pch = 19, ylab = "m", xlab = "Years", type = "l")
+par(mfrow = c(1,1))
+
+########################################################################################
+
+svdusa <- svd(m,1,1)
+
+svdusa$d == k
+
+
+```
+
+
+# rien 
+```{r}
+
+
+usqx <- life_table %>%
+  filter(Country == 'USA', Year %in% 1933:1995 ,Gender=='Both') %>%
+  select(qx,Year,Age)
+
+rates <- (usqx$qx)
+
+M <- matrix(log(rates), 63, 110 ,byrow = TRUE)
+
+#The first thing we need is the mean log-rate for each age group. This is easily computed using colMeans().
+
+a <- colMeans(M)
+
+for(j in 1:63) M[,j] <- M[,j] - a[j]
+
+d <- svd(M, 1, 1)
+b <- d$v/sum(d$v)
+k <- d$u * sum(d$v) * d$d[1]
+
+
+usmx2 <- filter(usqx, Year==1933 | Year == 1987) %>% 
+  mutate(year = factor(Year),fit = c(exp(a + b * k[1]), exp(a + b * k[55])))
+
+
+
+
+usmx2<-life_table_pivot %>%
+  filter(Country == 'USA' , Gender == 'Both') %>%
+  select(-Country,-Gender,-Year)
+
+usmx2 %>%
+  glimpse()
+
+
+```
 
