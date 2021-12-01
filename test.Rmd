@@ -1,8 +1,8 @@
 ---
 title: "full_life_tablea"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r tidyverse, message=FALSE, warning=FALSE, echo=FALSE}
@@ -393,6 +393,7 @@ install.packages("lifecontingencies")
 library(lifecontingencies)
 ```
 
+#reshaping the life table given to a demogdfata
 
 ```{r}
 # je veux une matrice row = time , col =age 
@@ -400,9 +401,9 @@ library(lifecontingencies)
 # preparer pour svd 
 
 uSA <-pivot_life_table %>%
-  dplyr::filter(Country == 'USA' , Gender == 'Both')%>%
+  dplyr::filter(Country == 'USA' , Gender == 'Both' ,Year %in% 1933:1995)%>%
   dplyr::select(-Country,-Gender)
-uSA[,2:111] = log(uSA[,2:111])
+
 
 svd1 <- svd(uSA ,nv=2)
 summary(svd1) %>%
@@ -423,27 +424,80 @@ life_table_pivot <- life_table %>%
     )
 return (life_table_pivot)
 }
+
 library(tidyverse)
 l__x <- pivot_life_lx(life_table)
-l__x =filter(l__x , Country == 'USA')
-l__x %>%
-  select(-Gender, -Country)
-#zessayer avec lx !
+
+lx<- l__x %>%
+  filter(Country == 'USA' , Gender == 'Both' , Year %in% 1933:1995) %>%
+  select(-Country , -Gender )
+ 
 Exp <- life_table$lx
 
 #créer un life table pivot avec lx de mm dim que life_pivot _qx
-pop <- acast(l__x,Age~Year,)
+pop <- acast(lx,Age~Year)
+
+uSA <- select(uSA, -Year)
+lx <- select(lx, -Year)
 
 USm <- demography::demogdata(data = t(uSA), 
-                 pop = t(l__x), 
-                 ages = as.integer(rownames(t(uSA))), 
-                 years= as.integer(colnames(t(uSA))), 
+                 pop = t(lx), 
+                 ages = 1:110, 
+                 years= 1933:1995, 
                  type = "mortality", 
                  label = "USA", 
-                 name = "male")
+                 name = "male",
+                 lambda = 1)
+
+sum(is.na(USm))
+
+LCH<-lca(USm)
 
 
-lc()
+plot(LCH$age,LCH$ax,col="blue"); plot(LCH$age,LCH$bx,col="blue")
+plot(LCH$year,LCH$kx,col="blue")
+
+library(forecast)
+Y <- LCH$kt
+(ETS <- ets(Y))
+(ARIMA <- auto.arima(Y,allowdrift=TRUE))
+plot(forecast(ARIMA,h=100))
+
+LCH0 <- lca(USm,years=1948:2005)
+
+
+
+RES=residuals(LCH,"pearson")
+colr=function(k) rainbow(110)[k*100]
+couleur=Vectorize(colr)(seq(.01,1,by=.01))
+plot(rep(RES$y,length(RES$x)),(RES$z),col=couleur[rep(RES$x,each=length(RES$y))-RES$x[1]+1])
+plot(rep(RES$x,each=length(RES$y)),t(RES$z),col=couleur[rep(RES$y,length(RES$x))+1])
+
+##############"""
+
+  test1 <-life_table_pivot %>%
+  filter (Country == 'USA' , Gender == 'Both' , Year %in% 1933:1995) %>%
+  select(-Year,-Country,-Gender)
+
+#testA => 63*110
+
+test1 <- log(test1)
+a_hat <- rowMeans(test1)
+Z <- test1 - a_hat
+
+
+singular <- svd(Z,1,1)
+u<- singular$u
+v<- singular$v
+d<- singular$d
+
+b_hat <- u[,1]
+k_hat <- max(d) * v[,1]
+
+d_square <- d^2
+proportion_variance <- max(d)^2 / sum(d_square)
+
+
 
 
 
@@ -628,7 +682,6 @@ g_3 <- ggplot(data_period) + geom_point(aes(year,fit)) +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1,g_2,g_3 , ncol=2)
 
-plot(kappa_est)
 
 ```
 
@@ -640,13 +693,13 @@ plot(kappa_est)
 Years <- 1933:1995
 Age <- 1:110
 
-m<- filter(life_table_pivot , Country == 'USA' ,Gender == 'Both', Year %in% Years) %>%
+m<- filter(pivot_life_table , Country == 'USA' ,Gender == 'Both', Year %in% Years) %>%
   select(-Gender,-Country,-Year)
 m<- log(m)
 n.x = nrow(m) # 63
 n.y = ncol(m) # 110
 
-m_mat <- as.matrix(m, nrow = n.y, ncol = n.x) # 110 X 63
+m_mat <- as.matrix(m, nrow = n.x, ncol = n.y) # 110 X 63
 plot(m_mat[,1], type = "l") #mortality of all ages in year 1933
 # Mean log mortality for all age groups under consideration (Age)
 a_age <- colMeans(m_mat)
@@ -664,9 +717,8 @@ a_year <- rowMeans(m_mat)
 # avg of log rates -> a_hat <- rowSums(m)/94
 # Subtracting a from all years in m_mat
 m_hat <- matrix(1, nrow = n.x, ncol = n.y) #Dummy matrix with dim 94 X 111
-m_hat <- t(m_mat)
-m_mat <- t(m_mat)
-for(i in 1:n.y) m_hat[,i] <- m_mat[,i] - a_age[i]
+#m_hat <- t(m_mat)
+for(i in 1:110) m_hat[,i] <- m_mat[,i] - a_age[i]
 m_hat <- m_hat[,1:110]
 age_mod <- 1:110
 #SVD
@@ -696,6 +748,8 @@ par(mfrow = c(1,1))
 
 ########################################################################################
 
+
+#how to compare ? 
 svdusa <- svd(m,1,1)
 
 svdusa$d == k
@@ -742,4 +796,3 @@ usmx2 %>%
 
 
 ```
-
