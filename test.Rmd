@@ -451,17 +451,18 @@ USm <- demography::demogdata(data = t(uSA),
 
 sum(is.na(USm))
 
-LCH<-lca(USm)
+LCH<-demography::lca(USm)
 
 
 plot(LCH$age,LCH$ax,col="blue"); plot(LCH$age,LCH$bx,col="blue")
 plot(LCH$year,LCH$kx,col="blue")
 
 library(forecast)
+
 Y <- LCH$kt
 (ETS <- ets(Y))
 (ARIMA <- auto.arima(Y,allowdrift=TRUE))
-plot(forecast(ARIMA,h=100))
+plot(forecast(ARIMA,h=15))
 
 LCH0 <- lca(USm,years=1948:2005)
 
@@ -758,6 +759,116 @@ svdusa$d == k
 ```
 
 
+#lee carter svd for european data 
+#we choose as an example the 
+
+
+```{r}
+
+
+france_Male<-pivot_life_table %>%
+  filter(Country == 'France', Gender == 'Male')
+
+france_female<-pivot_life_table %>%
+  filter(Country == 'France', Gender == 'Female')
+
+min_year_female <- min(france_female$Year) #1816
+min_year_male <- min(france_Male$Year) #1816
+max_year_female <- max(france_female$Year) #2017
+max_year_male <- max(france_Male$Year) #2017
+
+
+years_male = min_year_male:max_year_male
+years_female = min_year_female:max_year_female
+
+
+#creating hat mat male & female for all ages and all years 
+
+france_female <- france_female %>%
+  select(-Gender,-Country,-Year) #202 x 110
+
+france_Male <- france_Male %>%
+  select(-Gender,-Country,-Year) #202 * 110
+
+m_hat_male_fr <- as.matrix(france_Male)
+m_hat_female_fr <- as.matrix(france_female)
+
+
+a_age_male <- colMeans(m_hat_male_fr)
+a_age_female <- colMeans(m_hat_female_fr)
+
+#male svd france 
+for(i in 1:110) m_hat_male_fr[,i] <- m_hat_male_fr[,i] - a_age_male[i]
+m_hat_male_fr <- m_hat_male_fr[,1:110]
+age_mod <- 1:110
+#SVD
+svd_ <- svd(m_hat_male_fr,1,1)
+v <- svd_$v
+u <- svd_$u
+d <- svd_$d
+
+b <- v/sum(v)
+k <- u * sum(v) * d[1]
+fit_1 = a_age_male[age_mod] + (b * k[1])
+plot(x = age_mod, y = a_age_male, pch = 19, xlab = "Age", ylab = "m")
+lines(x = age_mod, y = fit_1, col = 2, lwd = 2, xlab = "Age", ylab = "m")
+
+fit_end <- a_age[age_mod] + (b * k[63])
+plot(x = age_mod, y = m_hat_male_fr[63,age_mod], pch = 18)
+lines(x = age_mod, y = fit_end, col = 2, lwd = 2)
+
+#Plotting parameter
+par(mfrow = c(2,2))
+plot(x = Years, y = k, type = "l")
+plot(x = age_mod, y = a[age_mod], type = "l", xlab = "Ages", ylab = "ax")
+plot(x = age_mod, y = b[age_mod], type = "l", xlab = "Ages", ylab = "bx" )
+#plotting m over "Years"
+plot(x = Years, y = m_mat[,1], pch = 19, ylab = "m", xlab = "Years", type = "l")
+par(mfrow = c(1,1))
+
+
+
+#female svd france 
+
+for(i in 1:110) m_hat[,i] <- m_mat[,i] - a_age[i]
+m_hat <- m_hat[,1:110]
+age_mod <- 1:110
+#SVD
+svd_ <- svd(m_hat,1,1)
+v <- svd_$v
+u <- svd_$u
+d <- svd_$d
+
+b <- v/sum(v)
+k <- u * sum(v) * d[1]
+fit_1 = a_age[age_mod] + (b * k[1])
+plot(x = age_mod, y = m_mat[1,age_mod], pch = 19, xlab = "Age", ylab = "m")
+lines(x = age_mod, y = fit_1, col = 2, lwd = 2, xlab = "Age", ylab = "m")
+
+fit_end <- a_age[age_mod] + (b * k[63])
+plot(x = age_mod, y = m_mat[63,age_mod], pch = 18)
+lines(x = age_mod, y = fit_end, col = 2, lwd = 2)
+
+#Plotting parameter
+par(mfrow = c(2,2))
+plot(x = Years, y = k, type = "l")
+plot(x = age_mod, y = a[age_mod], type = "l", xlab = "Ages", ylab = "ax")
+plot(x = age_mod, y = b[age_mod], type = "l", xlab = "Ages", ylab = "bx" )
+#plotting m over "Years"
+plot(x = Years, y = m_mat[,1], pch = 19, ylab = "m", xlab = "Years", type = "l")
+par(mfrow = c(1,1))
+
+
+
+```
+
+
+
+
+
+
+
+
 # rien 
 ```{r}
 
@@ -796,3 +907,116 @@ usmx2 %>%
 
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+uSA_femme <-pivot_life_table %>%
+  dplyr::filter(Country == 'USA' , Gender == 'Female')%>%
+  dplyr::select(-Country,-Gender)
+
+
+svdfemmeus <- svd(uSA_femme ,nv=2)
+summary(svd1) %>%
+  knitr::kable()
+
+library(reshape2)
+#trouver exposition à la mort  en fct de qx ?
+#filtrer life table a usa et selectioner uniquement les dx et qx et age et year 
+#esssayer d'avoir une matrice de la meme dimensiion que life table pivot fiotre aux USA 
+
+pivot_life_lx <- function(life_table) {
+pivot_life_lx <- life_table %>%
+  select(Country, Gender, Year, Age, lx) %>%
+    pivot_wider(
+      id_cols = c("Country","Gender","Year"),
+      names_from = Age,
+      values_from = lx
+    )
+return (pivot_life_lx)
+}
+
+library(tidyverse)
+l__x <- pivot_life_lx(life_table)
+
+lx_femaleUsa<- l__x %>%
+  filter(Country == 'USA' , Gender == 'Female') %>%
+  select(-Country , -Gender )
+ 
+Exp <- life_table$lx
+
+#créer un life table pivot avec lx de mm dim que life_pivot _qx
+#pop <- acast(lx,Age~Year)
+
+uSA_femme <- uSA_femme%>%
+  select( -Year)
+lx_femaleUsa <- lx_femaleUsa%>%
+  select( -Year)
+
+USfemale <- demography::demogdata(data = t(uSA_femme), 
+                 pop = t(lx_femaleUsa), 
+                 ages = 1:110, 
+                 years= 1933:2017, 
+                 type = "mortality", 
+                 label = "USA", 
+                 name = "Female",
+                 lambda = 1)
+
+sum(is.na(USm))
+
+LC_female_usa<-demography::lca(USfemale)
+
+constLC <- function (ax, bx,kt ,b0x, gc ,wxt ,ages) {
+  c1 <- mean(kt[1,], na.rm = TRUE)
+  c2 <- sum(bx[, 1], na.rm = TRUE)
+  list(ax = ax+c1*bx[,1] ,
+       bx=bx[,1]/c2 ,
+       kt=c2*(kt[1,]-c1))
+}
+library(StMoMo)
+
+LC <- StMoMo(link = "log" , staticAgeFun = TRUE , periodAgeFun = "NP" , constFun = constLC)
+LC <- lc()
+
+USF <- StMoMoData(USfemale , series = "Female")
+ages.fit <- 1:110
+years.fit <- 1933:1995
+
+LCfit1 <- fit(LC, data =USF , ages.fit=ages.fit , years.fit=years.fit)
+
+plot(LCfit1)
+
+#goodness-of-fit:  residuals 
+
+LcresUSF <- residuals(LCfit1)
+plot(LcresUSF, type = "colourmap" )
+plot(LcresUSF)
+
+#predict mortality from 2000 to 2015 ==> 20 ans apres 1995
+#forcasting 
+
+LCforUSF <- forecast(LCfit1, h=20)
+plot(LCforUSF, parametricbx = FALSE)
+
+LcsimUSF <- simulate(LCfit, nsim = 1000 , h= 20)
+#plot period index trajectories 
+plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-80,20), xlab="year", ylab="kt", main = "Peiod index LC")
+matlines(LcsimUSF$kt.s$years , LcsimUSF$kt.s$sim[1,,1:20], type="l", lty = 1)
+
+#fancharts based on period index
+
+```
+
