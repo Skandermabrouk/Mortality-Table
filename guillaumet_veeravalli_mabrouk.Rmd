@@ -5,11 +5,6 @@ output:
   pdf_document: default
 ---
 
-```{r}
-write('PATH="${RTOOLS40_HOME}\\usr\\bin;${PATH}"', file = "~/.Renviron", append = TRUE)
-Sys.which("make")
-## "C:\\rtools40\\usr\\bin\\make.exe"
-```
 
 
 ```{r tidyverse, message=FALSE, warning=FALSE, echo=FALSE}
@@ -277,7 +272,7 @@ Res_Plot_Year_60_65
 ```
 #PCA AND SVD LOG-MORTALITY
 
-```{r}
+```{r setup, include=FALSE}
 library(ggplot2)
 fr_pca_f <- life_table_pivot %>%
   filter(Country =='France' , Gender == 'Female' , Year %in% 1948:2010)
@@ -316,13 +311,28 @@ summary(resultsTT)
 summary(resultsFF)
 summary(resultsTF)
 summary(resultsFT)
-#commenter tous les graphiques 
+
+
+
+```
+
+```{r}
 #rajouter le screplot ! 
 s1 <- fviz_eig(resultsTT)
 s2 <- fviz_eig(resultsFF)
 s3 <- fviz_eig(resultsTF)
 s4 <- fviz_eig(resultsFT)
 gridExtra::grid.arrange(s1,s2,s3,s4,ncol=2,nrow=2)
+```
+On constate que le premier graphique (le cas : normalisé et centré) qui est réellement intéressant. le PC1 garde la grande majorité de la variance (93% environ) tout en gardant le reste sur les PC2,3 et 4. Les autres configurations (TF,FF,FT)* ont la variance à presque 100% expliquée par le PC1 dans les 3 cas.
+
+*TF : Normalisé non centré
+*FT : Non normalisé centré
+*FF : Ni normalisé ni centré
+
+```{r, warning=FALSE}
+
+
 ss1 <- fviz_pca_var(resultsTT , col.var = "contrib" , gradient.cols = c("red" , "black" , "yellow") , 
                     repel=TRUE)
 ss2 <- fviz_pca_var(resultsFF , col.var = "contrib" , gradient.cols = c("red" , "black" , "yellow") , 
@@ -332,28 +342,58 @@ ss3 <- fviz_pca_var(resultsTF , col.var = "contrib" , gradient.cols = c("red" , 
 ss4 <- fviz_pca_var(resultsFT , col.var = "contrib" , gradient.cols = c("red" , "black" , "yellow") , 
                     repel=TRUE)
 gridExtra::grid.arrange(ss1,ss2,ss3,ss4,ncol=2,nrow=2)
+
+
+```
+
+Les 2 graphiques à droite sont les graphiques des PCA non centrées. Ils n'ont pas de grande utilité.
+
+Les 2 graphiques à gauche sont les graphiques des PCA centrées (en haut normalisé, en bas non normalisé). Le graphique normalisé permet de rendre visible la contribution des variables plus clairement. La contribution de Year se démarque clairement des autres (avec des coordonnées positives).
+
+
+
+```{r, warning=FALSE}
+
+#motivez choix choix des axes => 
+#- regarder la repartition de la variance suivant les cas  -> plot du cours 
+#- rendre comparable les variables qui ont des variances differnentes ! 
+#tous les pays et tous les sexes 
 f1<-fviz_pca_biplot(resultsTT,repel = TRUE ,col.var = "Grey" ,col.ind = "Blue")
 f2<-fviz_pca_biplot(resultsFF,repel = TRUE ,col.var = "Grey" ,col.ind = "Blue")
 f3<-fviz_pca_biplot(resultsTF,repel = TRUE ,col.var = "Grey" ,col.ind = "Blue")
 f4<-fviz_pca_biplot(resultsFT,repel = TRUE ,col.var = "Grey" ,col.ind = "Blue")
 gridExtra::grid.arrange(f1,f2,f3,f4, ncol= 2, nrow = 2)
-#motivez choix choix des axes => 
-#- regarder la repartition de la variance suivant les cas  -> plot du cours 
-#- rendre comparable les variables qui ont des variances differnentes ! 
-#tous les pays et tous les sexes 
-resultsTT_ALL <-prcomp(life_table_pivot[, 3:113] , scale. = TRUE ,center = TRUE)
-resultsTT_ALL$rotation <- -1 *resultsTT_ALL$rotation
-resultsTT_ALL$x <- -1 *resultsTT_ALL$x
-par (mfrow = c(1,2))
-biplot(resultsTT_ALL)
-biplot(resultsTT)
-# commenter wtf ???
-# biplot (differnets pays et sexes )
-#a faire !!!!!!
-#Combinez les biplots pour différents pays (pour chaque sexe). Commentaire
-#groups1 <- c("Male","Female","Both")
-#groups2 <- c("France","Spain","Italy","USA","Netherlands","Sweden","UK")
-#fviz_pca_biplot(resultsTT_ALL, col.ind = groups2 , col.var = groups1)
+```
+Dans le cas centré normalisé, on constate que les vecteurs variables dans le biplot contribuent fortement au premier axe, et c'est le meme cas pour les individus. Il existe quelques individus qui sont eloignés des autres, exemple, le n°1 et 3.
+Une interprétation plutôt simple est qu'importe son âge (entre 0 et 110, on vit toujours mieux en 2010 qu'en 1948, c'est pour ça que la variable Year est la plus grande contribution du PC1, les premières années (1948) considérées contribuent négativement à la PC1 et que les plus récentes y contribuent positivement.
+
+Dans les autres cas, il n'y a pas vraiment d'interprétation à faire.
+
+
+#CHOIX DU PCA CENTER = TRUE, SCALE
+
+
+```{r}
+country <- levels(as.factor(life_table_pivot$Country))
+
+scree_male<- data.frame()
+scree_female<- data.frame()
+for (i in country) {
+  pca_male <- life_table_pivot %>% filter(Country == i, Gender == "Male", Year %in% 1948:2010 )
+  pca_male <- prcomp(pca_male[,3:113],scale.=TRUE, center=TRUE)
+  pca_female <- life_table_pivot %>% filter(Country == i, Gender == "Female", Year %in% 1948:2010 )
+  pca_female <- prcomp(pca_female[,3:113],scale.=TRUE, center=TRUE)
+}
+var_explained_df <- data.frame(PC= paste0("PC",1:5),
+                               var_explained=(pca_male$sdev[1:5])^2/sum((pca_male$sdev[1:5])^2))
+ 
+cbind(t(var_explained_df) 
+
+
+var_explained_df %>%
+  ggplot(aes(x=PC,y=var_explained))+
+  geom_col()+
+  labs(title="Scree plot: PCA on scaled data")
 ```
 
 
