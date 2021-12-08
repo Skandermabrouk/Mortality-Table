@@ -223,7 +223,7 @@ life_table %>%
   facet_grid(Country~Gender, scales = 'free')
 ```
 Les tendances sont identiques : les quotients de mortalit´e baissent tous en fonction du temps.
-Pour les enfants de moins 5 ans, la baisse est plus importante (dˆus aux progres de la vaccination et des mesures dd’hygi`ene). Les courbes sont presque identiques avec les mˆemes pics.
+Pour les enfants de moins 5 ans, la baisse est plus importante (dˆus aux progres de la vaccination et des mesures d’hygi`ene). Les courbes sont presque identiques avec les mˆemes pics.
 A l’ˆage de 5 ans, les quotients sont presque nuls. `
 Pour les ˆages 15, 20, 40 et 60, les pentes des droites de regr´ession sont plus faibles que celles
 des enfants. La baisse est plus importante chez les femmes. Certains pics s’expliquent par
@@ -618,7 +618,7 @@ PCA_F=rbind(var_explained_SF,var_explained_USF,var_explained_FRAF,var_explained_
 pcafemme<-PCA_F %>%
   ggplot(aes(x=PC,y=var_explained,fill=Country))+
   geom_col(position = "dodge")+
-  ggtitle("Scree plot: Share of inertia standarisation ")+
+  ggtitle("Scree plot: avec standarisation ")+
   labs(subtitle = "per Country Female")+
   theme(axis.text.x=element_text(angle=-45, hjust=0, vjust=1)) +ylab("Percent")+xlab("Principal Componement") +
   theme(plot.title=element_text(size=12, hjust=0.5, face="bold", colour="maroon", vjust=-1)) +
@@ -734,7 +734,7 @@ PCA_M=rbind(var_explained_SM,var_explained_USM,var_explained_FRAM,var_explained_
 pcahomme<-PCA_M %>%
   ggplot(aes(x=PC,y=var_explained,fill=Country))+
   geom_col(position = "dodge")+
-  ggtitle("Scree plot: Share of inertia Avec standarisation")+
+  ggtitle("Scree plot: Avec standarisation")+
   labs(subtitle = "per Country Male")+
   theme(axis.text.x=element_text(angle=-45, hjust=0, vjust=1)) +ylab("Percent")+xlab("Principal Componement") +
   theme(plot.title=element_text(size=12, hjust=0.5, face="bold", colour="maroon", vjust=-1)) +
@@ -800,7 +800,7 @@ PCA_F_2=rbind(var_explained_SF_2,var_explained_USF_2,var_explained_FRAF_2,var_ex
 pcafemme2<-PCA_F_2 %>%
   ggplot(aes(x=PC,y=var_explained,fill=Country))+
   geom_col(position = "dodge")+
-  ggtitle("Scree plot: Share of inertia without standarisation ")+
+  ggtitle("Scree plot:without standarisation ")+
   labs(subtitle = "per Country Female")+
   theme(axis.text.x=element_text(angle=-45, hjust=0, vjust=1)) +ylab("Percent")+xlab("Principal Componement") +
   theme(plot.title=element_text(size=12, hjust=0.5, face="bold", colour="maroon", vjust=-1)) +
@@ -861,7 +861,7 @@ PCA_M_2=rbind(var_explained_SM_2,var_explained_USM_2,var_explained_FRAM_2,var_ex
 pcahomme2<-PCA_M_2 %>%
   ggplot(aes(x=PC,y=var_explained,fill=Country))+
   geom_col(position = "dodge")+
-  ggtitle("Scree plot: Share of inertia without standarisation")+
+  ggtitle("Scree plot:without standarisation")+
   labs(subtitle = "per Country Male")+
   theme(axis.text.x=element_text(angle=-45, hjust=0, vjust=1)) +ylab("Percent")+xlab("Principal Componement") +
   theme(plot.title=element_text(size=12, hjust=0.5, face="bold", colour="maroon", vjust=-1)) +
@@ -923,40 +923,95 @@ A_both <- life_table_pivot %>%
   as.matrix()
 M_usb <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_both
 svdUS_B <- svd(M_usb,1,1)
-s <- svdUS_B$d[1]
-u <- -1 *svdUS_B$u
-v <- -1 *svdUS_B$v
-ax <- colMeans(A_both)
+s_USB <- svdUS_B$d[1]
+u_USB <- -1 *svdUS_B$u
+v_USB <- -1 *svdUS_B$v
+ax_USB <- colMeans(A_both)
 #plot(Age, ax)
 #lines(Age,ax,col="red")
 #plot(Age, v, ylab = "Bx")
 #plot(Years, u, ylab = "K")
 
 
-data <- tibble(age = 0:109, ax)
+data <- tibble(age = 0:109, ax_USB)
 #alpha
-g_1 <- ggplot(data) + geom_point(aes(age,ax)) +
-  geom_line(aes(age,ax), col = "red") +
+g_1 <- ggplot(data) + geom_point(aes(age,ax_USB)) +
+  geom_line(aes(age,ax_USB), col = "red") +
   theme_bw() +
   ggtitle("Alpha estimating of USA Both") +
   labs(y = bquote(hat(alpha)[x]^"(1)"))
 #beta
-g_2 <- ggplot(data) + geom_point(aes(age,v)) +
-  geom_line(aes(age,v), col = "red") +
+g_2 <- ggplot(data) + geom_point(aes(age,v_USB)) +
+  geom_line(aes(age,v_USB), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA Both") +
+  ggtitle("beta estimating of USA Both") +
   labs(y = bquote(hat(beta)[x]^"(1)"))
 
 #kappa
-data_period <- tibble(year = 1933:1995, u)
+data_period <- tibble(year = 1933:1995, u_USB)
 
-g_3 <- ggplot(data_period) + geom_point(aes(year,u)) +
-  geom_line(aes(year,u), col = "red") +
+g_3 <- ggplot(data_period) + geom_point(aes(year,u_USB)) +
+  geom_line(aes(year,u_USB), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA Both") +
+  ggtitle("kappa estimating of USA Both") +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
+
 gridExtra::grid.arrange(g_1,g_2,g_3, ncol = 2)
 ```
+# cOMPARE WITH SVD RANK 2 USING SCHMIDT NORM
+```{r}
+
+res2_f=svd(usa_f_df)
+A2_f=(res2_f$u[,1:2])%*%diag(res2_f$d[1:2])%*%t(res2_f$v[,1:2])
+mat_f=matrix(0,nrow=63,ncol=110) #mat modele lee carter
+for(i in 1:110){               #A2 modele svd tronqué rang 2
+  mat_f[,i]=a_f[i]+b_f[i]*k_f
+}
+norm(mat_f-A2_f,"F") #Question 2
+norm(as.matrix(usa_f_df)-mat_f) #pour obtenir les epsilons
+
+#Lee Carter
+usa_m_df<-life_table_pivot%>%subset(Country=="USA"& Gender=="Male" & Year<1996,select=c(4:113))%>%log()
+a=colMeans(usa_m_df)
+id=matrix(1,nrow=63,ncol=1)
+res=usa_m_df-(id%*%t(a))
+res
+svd(res,1,1)
+s=svd(res,1,1)$d[1]
+k=svd(res,1,1)$u*s
+b=svd(res,1,1)$v
+res2=svd(usa_m_df)
+A2=(res2$u[,1:2])%*%diag(res2$d[1:2])%*%t(res2$v[,1:2])
+mat=matrix(0,nrow=63,ncol=110)
+for(i in 1:110){
+  mat[,i]=a[i]+b[i]*k
+}
+norm(mat-A2,"F") #Question 2
+norm(as.matrix(usa_m_df)-mat)
+#question 4
+k2=cbind(k,c(1933:1995))
+reg=lm(k2[,1]~k2[,2])
+as.data.frame(summary(reg)$coefficients)[1,1]->intercept
+as.data.frame(summary(reg)$coefficients)[2,1]->slope
+k_fitted=matrix(0,nrow=16,ncol=2)
+k_fitted[,1]=c(2000:2015)
+k_fitted[,2]=intercept+slope*k_fitted[,1]
+plot(k2[,2],k2[,1])
+plot(x=k_fitted[,1],y=k_fitted[,2])
+#Question 5
+mat_log=matrix(0,nrow=16,ncol=110)
+for(i in 1:110){
+  mat_log[,i]=a[i]+b[i]*k_fitted[,2]
+}
+mat_log %>% exp() %>% as.matrix() -> mat_exp
+life_table_pivot %>% subset(Country=="USA"& Gender=="Male" & Year%in%c(2000:2015),select=c(4:113)) %>% as.matrix() ->dfusa2000
+norm(mat_exp-dfusa2000,"F")
+mat2=rbind(mat_exp[1,],mat_exp[6,],mat_exp[11,],mat_exp[16,])
+abs(mat_exp[1,1]-dfusa2000[1,1])
+
+
+```
+
 
 # LEE CARTER SVD USA FEMALE
 ```{r}
@@ -970,7 +1025,7 @@ A_F <- life_table_pivot %>%
   as.matrix()
 M_usf <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_F
 svdUS_F <- svd(M_usf,1,1)
-s <- svdUS_F$d[1]
+s_USF <- svdUS_F$d[1]
 u_USfSVD <- -1 *svdUS_F$u
 v_USfSVD <- -1 *svdUS_F$v
 ax_USfSVD <- colMeans(A_F)
@@ -989,7 +1044,7 @@ g_1_USF <- ggplot(data_USF) + geom_point(aes(age,ax_USfSVD)) +
 g_2_USF <- ggplot(data_USF) + geom_point(aes(age,v_USfSVD)) +
   geom_line(aes(age,v_USfSVD), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA Female") +
+  ggtitle("beta estimating of USA Female") +
   labs(y = bquote(hat(beta)[x]^"(1)"))
 
 #kappa
@@ -998,7 +1053,7 @@ data_period_USF <- tibble(year = 1933:1995, u_USfSVD)
 g_3_USF <- ggplot(data_period_USF) + geom_point(aes(year,u_USfSVD)) +
   geom_line(aes(year,u_USfSVD), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA Female") +
+  ggtitle("kappa estimating of USA Female") +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_USF,g_2_USF,g_3_USF, ncol = 2)
 ```
@@ -1015,7 +1070,7 @@ A_M <- life_table_pivot %>%
   as.matrix()
 M_usm <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_M
 svdUS_M <- svd(M_usm,1,1)
-s <- svdUS_M$d[1]
+s_USM <- svdUS_M$d[1]
 u_USmSVD <- -1 *svdUS_M$u
 v_USmSVD <- -1 *svdUS_M$v
 ax_USmSVD <- colMeans(A_M)
@@ -1034,7 +1089,7 @@ g_1_USM <- ggplot(data_USM) + geom_point(aes(age,ax_USmSVD)) +
 g_2_USM <- ggplot(data_USM) + geom_point(aes(age,v_USmSVD)) +
   geom_line(aes(age,v_USmSVD), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA Male") +
+  ggtitle("beta estimating of USA Male") +
   labs(y = bquote(hat(beta)[x]^"(1)"))
 
 #kappa
@@ -1043,28 +1098,13 @@ data_period_USM <- tibble(year = 1933:1995, u_USmSVD)
 g_3_USM <- ggplot(data_period_USM) + geom_point(aes(year,u_USmSVD)) +
   geom_line(aes(year,u_USmSVD), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA Male") +
+  ggtitle("kappa estimating of USA Male") +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_USM,g_2_USM,g_3_USM, ncol = 2)
 ```
-```{r}
 
-svdUS_M_SansCarter <- svd(A_M,2,2)
-u1<- -1*svdUS_M_SansCarter$u
-u2<- -1*svdUS_M_SansCarter$v
-
-norm(u1[,1],type = "F")
-norm(u_USmSVD, type = "F")
-
-norm(u2, type = "F")
-norm(v_USmSVD, type= "F")
-
-norm(svdUS_M_SansCarter$d, type = "F")
-
-```
-
-#LEE CARTER DEMOG USA BOTH
-```{r, warning=FALSE}
+#LEE CARTER DEMOGDATA USA BOTH
+```{r, warning=FALSE,include=FALSE}
 uSA_both <-life_table_pivot%>%
   dplyr::filter(Country == 'USA' , Gender == 'Both')%>%
   dplyr::select(-Country,-Gender)
@@ -1119,24 +1159,62 @@ USB <- StMoMoData(USboth , series = "Both")
 ages.fit <- 1:110
 years.fit <- 1933:1995
 LCfit1 <- fit(LC, data =USB , ages.fit=ages.fit , years.fit=years.fit)
-plot(LCfit1)
+
+```
+
+```{r}
+a1 <- LCfit1$ax
+b1 <- LCfit1$bx
+k1 <- LCfit1$kt
+
+
+data_1 <- tibble(age = 1:110, a1)
+#alpha
+g11 <- ggplot(data_1) + geom_point(aes(age,a1)) +
+  geom_line(aes(age,a1), col = "red") +
+  theme_bw() +
+  ggtitle("Alpha estimating of USA  Both DEMOGDATA") +
+  labs(y = bquote(hat(alpha)[x]^"(1)"))
+#beta
+g12 <- ggplot(data_1) + geom_point(aes(age,b1)) +
+  geom_line(aes(age,b1), col = "red") +
+  theme_bw() +
+  ggtitle("Beta estimating of USA Both DEMOGDATA") +
+  labs(y = bquote(hat(beta)[x]^"(1)"))
+
+#kappa
+data_period <- tibble(year = 1933:1995, k1)
+
+g13 <- ggplot(data_period_USM) + geom_point(aes(year,k1)) +
+  geom_line(aes(year,k1), col = "red") +
+  theme_bw() +
+  ggtitle("kappa estimating of USA  Both DEMOGDATA") +
+  labs(y = bquote(hat(kappa)[t]^"(1)"))
+gridExtra::grid.arrange(g11,g12,g13, ncol = 2)
+```
+
+```{r}
 #goodness-of-fit:  residuals 
 LcresUSB <- residuals(LCfit1)
-plot(LcresUSB, type = "colourmap" )
+#plot(LcresUSB, type = "colourmap" )
 plot(LcresUSB)
+```
+
+```{r}
 #predict mortality from 2000 to 2015 ==> 20 ans apres 1995
 #forcasting 
 LCforUSB <- forecast(LCfit1, h=20)
 plot(LCforUSB, parametricbx = FALSE)
-LcsimUSB <- simulate(LCfit1, nsim = 1000 , h= 20)
+#pour les simulations
+#LcsimUSB <- simulate(LCfit1, nsim = 1000 , h= 20)
 #plot period index trajectories 
-plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-80,20), xlab="year", ylab="kt", main = "Peiod index LC")
-matlines(LcsimUSB$kt.s$years , LcsimUSB$kt.s$sim[1,,1:20], type="l", lty = 1)
+#plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-80,20), xlab="year", ylab="kt", main = "Peiod index LC")
+#matlines(LcsimUSB$kt.s$years , LcsimUSB$kt.s$sim[1,,1:20], type="l", lty = 1)
 ```
 
 
-#LEE CARTER DEMOG USA FEMALE
-```{r}
+#LEE CARTER DEMOGDATA USA FEMALE
+```{r,warning=FALSE,include=FALSE}
 uSA_femme <-life_table_pivot%>%
   dplyr::filter(Country == 'USA' , Gender == 'Female')%>%
   dplyr::select(-Country,-Gender)
@@ -1191,32 +1269,36 @@ USF <- StMoMoData(USfemale , series = "Female")
 ages.fit <- 1:110
 years.fit <- 1933:1995
 LCfit1 <- fit(LC, data =USF , ages.fit=ages.fit , years.fit=years.fit)
-plot(LCfit1)
+#plot(LCfit1)
 #goodness-of-fit:  residuals 
-LcresUSF <- residuals(LCfit1)
-plot(LcresUSF, type = "colourmap" )
-plot(LcresUSF)
+#LcresUSF <- residuals(LCfit1)
+#plot(LcresUSF, type = "colourmap" )
+#plot(LcresUSF)
 #predict mortality from 2000 to 2015 ==> 20 ans apres 1995
 #forecasting 
 LCforUSF <- forecast(LCfit1, h=20)
 plot(LCforUSF, parametricbx = FALSE)
-LcsimUSF <- simulate(LCfit1, nsim = 1000 , h= 20)
+#LcsimUSF <- simulate(LCfit1, nsim = 1000 , h= 20)
 #plot period index trajectories 
-plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-80,20), xlab="year", ylab="kt", main = "Peiod index LC")
-matlines(LcsimUSF$kt.s$years , LcsimUSF$kt.s$sim[1,,1:20], type="l", lty = 1)
+#plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-80,20), xlab="year", ylab="kt", main = "Peiod index LC")
+#matlines(LcsimUSF$kt.s$years , LcsimUSF$kt.s$sim[1,,1:20], type="l", lty = 1)
 ```
+```{r}
+#forecasting 
+LCforUSF <- forecast(LCfit1, h=20)
+plot(LCforUSF, parametricbx = FALSE)
+```
+
 #LEE CARTER DEMOG USA MALE
 
-```{r}
+```{r,warning=FALSE,include=FALSE}
 uSA_homme <-life_table_pivot%>%
   dplyr::filter(Country == 'USA' , Gender == 'Male')%>%
   dplyr::select(-Country,-Gender)
 svdhommeus <- svd(uSA_homme ,nv=2)
 summary(svdhommeus) %>%
   knitr::kable()
-library(reshape2)
-#filtrer life table a usa et selectioner uniquement les dx et qx et age et year 
-#esssayer d'avoir une matrice de la meme dim que life table pivot filtre aux USA 
+
 pivot_life_lx <- function(life_table) {
 pivot_life_lx <- life_table %>%
   select(Country, Gender, Year, Age, lx) %>%
@@ -1263,30 +1345,23 @@ USM <- StMoMoData(USmale , series = "Male")
 ages.fit <- 1:110
 years.fit <- 1933:1995
 LCfit1 <- fit(LC, data =USM , ages.fit=ages.fit , years.fit=years.fit)
-plot(LCfit1)
+#plot(LCfit1)
 #goodness-of-fit:  residuals 
-LcresUSM <- residuals(LCfit1)
-plot(LcresUSM, type = "colourmap" )
-plot(LcresUSM)
+#LcresUSM <- residuals(LCfit1)
+#plot(LcresUSM, type = "colourmap" )
+#plot(LcresUSM)
 #predict mortality from 2000 to 2015 ==> 20 ans apres 1995
+
+#LcsimUSM <- simulate(LCfit1, nsim = 1000 , h= 20)
+#plot period index trajectories 
+#plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-80,20), xlab="year", ylab="kt", main = "Peiod index LC")
+#matlines(LcsimUSM$kt.s$years , LcsimUSM$kt.s$sim[1,,1:20], type="l", lty = 1)
+```
+```{r}
 #forcasting 
 LCforUSM <- forecast(LCfit1, h=20)
 plot(LCforUSM, parametricbx = FALSE)
-LcsimUSM <- simulate(LCfit1, nsim = 1000 , h= 20)
-#plot period index trajectories 
-plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-80,20), xlab="year", ylab="kt", main = "Peiod index LC")
-matlines(LcsimUSM$kt.s$years , LcsimUSM$kt.s$sim[1,,1:20], type="l", lty = 1)
 ```
-#COMPARE SVD AX U V VS DEMOG
-
-```{r}
-# ax est constant on compare uniquement le kappa et beta de deux SVD 
-#on utilise la fonction norm() de R
-```
-
-
-#PLOTTING USA 2000:2015 MORTALITY QUOTIENTS FITTED LEECARTER DEMOG VS OBSERVATIONS
-
 
 
 #DONNEE FRANCE
@@ -1294,23 +1369,48 @@ matlines(LcsimUSM$kt.s$years , LcsimUSM$kt.s$sim[1,,1:20], type="l", lty = 1)
 # LEE CARTER SVD FRANCE BOTH, MALE, FEMALE
 ```{r}
 #BOTH
+
 Years <- 1933:1995
 T <- length(Years)
 Age <- 1:110
-A <- life_table_pivot %>%
+A_FRB <- life_table_pivot %>%
   filter(Country == "France", Gender == 'Both', Year %in% Years) %>%
   select(-Gender, -Country, -Year) %>%
   log() %>%
   as.matrix()
-M <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A
-svdUS <- svd(M,1,1)
-s <- svdUS$d[1]
-u <- -1 *svdUS$u
-v <- -1 *svdUS$v
-ax <- colMeans(A)
-plot(Age, ax)
-plot(Age, v, ylab = "Bx")
-plot(Years, u, ylab = "K")
+M_FRB <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_FRB
+svdFRB <- svd(M,1,1)
+s_FRB <- svdUS$d[1]
+u_FRB <- -1 *svdFRB$u
+v_FRB <- -1 *svdFRB$v
+ax_FRB <- colMeans(A_FRB)
+#plot(Age, ax)
+#plot(Age, v, ylab = "Bx")
+#plot(Years, u, ylab = "K")
+
+data_FRB <- tibble(age = 0:109, ax_FRB)
+#alpha
+g_1_FRB <- ggplot(data_FRB) + geom_point(aes(age,ax_FRB)) +
+  geom_line(aes(age,ax_FRB), col = "red") +
+  theme_bw() +
+  ggtitle("Alpha estimating of USA Male") +
+  labs(y = bquote(hat(alpha)[x]^"(1)"))
+#beta
+g_2_FRB <- ggplot(data_FRB) + geom_point(aes(age,v_FRB)) +
+  geom_line(aes(age,v_FRB), col = "red") +
+  theme_bw() +
+  ggtitle("beta estimating of USA Male") +
+  labs(y = bquote(hat(beta)[x]^"(1)"))
+
+#kappa
+data_period_FRB <- tibble(year = 1933:1995, u_FRB)
+
+g_3_FRB<- ggplot(data_period_FRB) + geom_point(aes(year,u_FRB)) +
+  geom_line(aes(year,u_FRB), col = "red") +
+  theme_bw() +
+  ggtitle("kappa estimating of USA Male") +
+  labs(y = bquote(hat(kappa)[t]^"(1)"))
+gridExtra::grid.arrange(g_1_FRB,g_2_FRB,g_3_FRB, ncol = 2)
 ```
 
 ```{r}
@@ -1318,20 +1418,43 @@ plot(Years, u, ylab = "K")
 Years <- 1933:1995
 T <- length(Years)
 Age <- 1:110
-A <- life_table_pivot %>%
+A_FRM <- life_table_pivot %>%
   filter(Country == "France", Gender == 'Male', Year %in% Years) %>%
   select(-Gender, -Country, -Year) %>%
   log() %>%
   as.matrix()
-M <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A
-svdUS <- svd(M,1,1)
-s <- svdUS$d[1]
-u <- -1 *svdUS$u
-v <- -1 *svdUS$v
-ax <- colMeans(A)
-plot(Age, ax)
-plot(Age, v, ylab = "Bx")
-plot(Years, u, ylab = "K")
+M_FRM <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_FRM
+svdFRM <- svd(M_FRM,1,1)
+sFRM <- svdFRM$d[1]
+uFRM <- -1 *svdFRM$u
+vFRM <- -1 *svdFRM$v
+axFRM <- colMeans(A_FRM)
+#plot(Age, ax)
+#plot(Age, v, ylab = "Bx")
+#plot(Years, u, ylab = "K")
+data_FRM <- tibble(age = 0:109, axFRM)
+#alpha
+g_1_FRM <- ggplot(data_FRM) + geom_point(aes(age,ax_USmSVD)) +
+  geom_line(aes(age,ax_USmSVD), col = "red") +
+  theme_bw() +
+  ggtitle("Alpha estimating of USA Male") +
+  labs(y = bquote(hat(alpha)[x]^"(1)"))
+#beta
+g_2_FRM <- ggplot(data_FRM) + geom_point(aes(age,vFRM)) +
+  geom_line(aes(age,vFRM), col = "red") +
+  theme_bw() +
+  ggtitle("Alpha estimating of USA Male") +
+  labs(y = bquote(hat(beta)[x]^"(1)"))
+
+#kappa
+data_period_FRM <- tibble(year = 1933:1995, uFRM)
+
+g_3_FRM <- ggplot(data_period_FRM) + geom_point(aes(year,uFRM)) +
+  geom_line(aes(year,uFRM), col = "red") +
+  theme_bw() +
+  ggtitle("Alpha estimating of USA Male") +
+  labs(y = bquote(hat(kappa)[t]^"(1)"))
+gridExtra::grid.arrange(g_1_FRM,g_2_FRM,g_3_FRM, ncol = 2)
 ```
 
 ```{r}
@@ -1339,25 +1462,48 @@ plot(Years, u, ylab = "K")
 Years <- 1933:1995
 T <- length(Years)
 Age <- 1:110
-A <- life_table_pivot %>%
+A_FRF <- life_table_pivot %>%
   filter(Country == "France", Gender == 'Female', Year %in% Years) %>%
   select(-Gender, -Country, -Year) %>%
   log() %>%
   as.matrix()
-M <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A
-svdUS <- svd(M,1,1)
-s <- svdUS$d[1]
-u <- -1 *svdUS$u
-v <- -1 *svdUS$v
-ax <- colMeans(A)
-plot(Age, ax)
-plot(Age, v, ylab = "Bx")
-plot(Years, u, ylab = "K")
+M_FRF<- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_FRF
+svdFRF <- svd(M_FRF,1,1)
+sFRF <- svdFRF$d[1]
+uFRF <- -1 *svdFRF$u
+vFRF <- -1 *svdFRF$v
+axFRF <- colMeans(A_FRF)
+#plot(Age, ax)
+#plot(Age, v, ylab = "Bx")
+#plot(Years, u, ylab = "K")
+data_FRF <- tibble(age = 0:109, axFRF)
+#alpha
+g_1_FRF <- ggplot(data_FRF) + geom_point(aes(age,axFRF)) +
+  geom_line(aes(age,axFRF), col = "red") +
+  theme_bw() +
+  ggtitle("Alpha estimating of USA FEMale") +
+  labs(y = bquote(hat(alpha)[x]^"(1)"))
+#beta
+g_2_FRF <- ggplot(data_FRF) + geom_point(aes(age,vFRF)) +
+  geom_line(aes(age,vFRF), col = "red") +
+  theme_bw() +
+  ggtitle("beta estimating of USA FEMale") +
+  labs(y = bquote(hat(beta)[x]^"(1)"))
+
+#kappa
+data_period_FRF <- tibble(year = 1933:1995, uFRF)
+
+g_3_FRF <- ggplot(data_period_FRF) + geom_point(aes(year,uFRF)) +
+  geom_line(aes(year,uFRF), col = "red") +
+  theme_bw() +
+  ggtitle("kappa estimating of USA FEMale") +
+  labs(y = bquote(hat(kappa)[t]^"(1)"))
+gridExtra::grid.arrange(g_1_FRF,g_2_FRF,g_3_FRF, ncol = 2)
 ```
 
 #LEE CARTER DEMOG FRANCE MALE, BOTH, FEMALE
 
-```{r}
+```{r,include=FALSE,warning=FALSE}
 #MALE
 FR_male <-life_table_pivot%>%
   dplyr::filter(Country == 'France' , Gender == 'Male')%>%
@@ -1365,7 +1511,6 @@ FR_male <-life_table_pivot%>%
 svdmaleFR <- svd(FR_male ,nv=2)
 summary(svdmaleFR) %>%
   knitr::kable()
-library(reshape2)
 #trouver exposition à la mort  en fct de qx ?
 #filtrer life table a usa et selectioner uniquement les dx et qx et age et year 
 #esssayer d'avoir une matrice de la meme dimensiion que life table pivot fiotre aux USA 
@@ -1415,23 +1560,26 @@ FRM <- StMoMoData(FRmale, series = "Male")
 ages.fit <- 1:110
 years.fit <- 1933:1995
 LCfit1 <- fit(LC, data =FRM , ages.fit=ages.fit , years.fit=years.fit)
-plot(LCfit1)
+#plot(LCfit1)
 #goodness-of-fit:  residuals 
-LcresFRM <- residuals(LCfit1)
-plot(LcresFRM, type = "colourmap" )
-plot(LcresFRM)
+#LcresFRM <- residuals(LCfit1)
+#plot(LcresFRM, type = "colourmap" )
+#plot(LcresFRM)
 #predict mortality from 2000 to 2015 ==> 20 ans apres 1995
+
+#LcsimFRM <- simulate(LCfit1, nsim = 1000 , h= 20)
+#plot period index trajectories 
+#plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-180,20), xlab="year", ylab="kt", main = "Peiod index LC")
+#matlines(LcsimFRM$kt.s$years , LcsimFRM$kt.s$sim[1,,1:20], type="l", lty = 1)
+```
+```{r}
 #forcasting 
 LCforFRM <- forecast(LCfit1, h=20)
 plot(LCforFRM, parametricbx = FALSE)
-LcsimFRM <- simulate(LCfit1, nsim = 1000 , h= 20)
-#plot period index trajectories 
-plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-180,20), xlab="year", ylab="kt", main = "Peiod index LC")
-matlines(LcsimFRM$kt.s$years , LcsimFRM$kt.s$sim[1,,1:20], type="l", lty = 1)
 ```
 
 
-```{r}
+```{r,include=FALSE,warning=FALSE}
 #BOTH
 FR_both <-life_table_pivot%>%
   dplyr::filter(Country == 'France' , Gender == 'Both')%>%
@@ -1439,7 +1587,6 @@ FR_both <-life_table_pivot%>%
 svdbothFR <- svd(FR_both ,nv=2)
 summary(svdbothFR) %>%
   knitr::kable()
-library(reshape2)
 #trouver exposition à la mort  en fct de qx ?
 #filtrer life table a usa et selectioner uniquement les dx et qx et age et year 
 #esssayer d'avoir une matrice de la meme dimensiion que life table pivot fiotre aux USA 
@@ -1489,22 +1636,25 @@ FRB <- StMoMoData(FRboth , series = "Both")
 ages.fit <- 1:110
 years.fit <- 1933:1995
 LCfit1 <- fit(LC, data =FRB , ages.fit=ages.fit , years.fit=years.fit)
-plot(LCfit1)
+#plot(LCfit1)
 #goodness-of-fit:  residuals 
-LcresFRB <- residuals(LCfit1)
-plot(LcresFRB, type = "colourmap" )
-plot(LcresFRB)
+#LcresFRB <- residuals(LCfit1)
+#plot(LcresFRB, type = "colourmap" )
+#plot(LcresFRB)
 #predict mortality from 2000 to 2015 ==> 20 ans apres 1995
+
+#LcsimFRB <- simulate(LCfit1, nsim = 1000 , h= 20)
+#plot period index trajectories 
+#plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-180,20), xlab="year", ylab="kt", main = "Peiod index LC")
+#matlines(LcsimFRB$kt.s$years , LcsimFRB$kt.s$sim[1,,1:20], type="l", lty = 1)
+```
+```{r}
 #forcasting 
 LCforFRB <- forecast(LCfit1, h=20)
 plot(LCforFRB, parametricbx = FALSE)
-LcsimFRB <- simulate(LCfit1, nsim = 1000 , h= 20)
-#plot period index trajectories 
-plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-180,20), xlab="year", ylab="kt", main = "Peiod index LC")
-matlines(LcsimFRB$kt.s$years , LcsimFRB$kt.s$sim[1,,1:20], type="l", lty = 1)
 ```
 
-```{r}
+```{r,include=FALSE,warning=FALSE}
 #FEMALE
 FR_female <-life_table_pivot%>%
   dplyr::filter(Country == 'France' , Gender == 'Female')%>%
@@ -1512,7 +1662,6 @@ FR_female <-life_table_pivot%>%
 svdfemaleFR <- svd(FR_female ,nv=2)
 summary(svdfemaleFR) %>%
   knitr::kable()
-library(reshape2)
 #trouver exposition à la mort  en fct de qx ?
 #filtrer life table a usa et selectioner uniquement les dx et qx et age et year 
 #esssayer d'avoir une matrice de la meme dimensiion que life table pivot fiotre aux USA 
@@ -1560,26 +1709,29 @@ LC <- StMoMo(link = "log" , staticAgeFun = TRUE , periodAgeFun = "NP" , constFun
 LC <- lc()
 FRF <- StMoMoData(FRfemale , series = "Female")
 ages.fit <- 1:110
-years.fit <- 1933:1995
+years.fit <- 1945:1995
 LCfit1 <- fit(LC, data =FRF , ages.fit=ages.fit , years.fit=years.fit)
-plot(LCfit1)
+#plot(LCfit1)
 #goodness-of-fit:  residuals 
-LcresFRF <- residuals(LCfit1)
-plot(LcresFRF, type = "colourmap" )
-plot(LcresFRF)
+#LcresFRF <- residuals(LCfit1)
+#plot(LcresFRF, type = "colourmap" )
+#plot(LcresFRF)
+
+#LcsimFRF <- simulate(LCfit1, nsim = 1000 , h= 20)
+#plot period index trajectories 
+#plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-180,20), xlab="year", ylab="kt", main = "Peiod index LC")
+#matlines(LcsimFRF$kt.s$years , LcsimFRF$kt.s$sim[1,,1:20], type="l", lty = 1)
+```
+```{r}
 #predict mortality from 2000 to 2015 ==> 20 ans apres 1995
 #forcasting 
 LCforFRF <- forecast(LCfit1, h=20)
 plot(LCforFRF, parametricbx = FALSE)
-LcsimFRF <- simulate(LCfit1, nsim = 1000 , h= 20)
-#plot period index trajectories 
-plot(LCfit1$years, LCfit1$kt[1, ], type="l",xlim = c(2000,2015),ylim = c(-180,20), xlab="year", ylab="kt", main = "Peiod index LC")
-matlines(LcsimFRF$kt.s$years , LcsimFRF$kt.s$sim[1,,1:20], type="l", lty = 1)
 ```
 
-#COMPARE AX U V SVD VS DEMOG
-
-#PLOTTING FR 2000:2015 MORTALITY QUOTIENTS FITTED LEECARTER DEMOG VS OBSERVATIONS
+```{r}
+#refaire un fit a partir les annees 1900 : 1990 
+```
 
 
 #Predictions of life expectancies at different ages
@@ -1593,22 +1745,51 @@ rf<-Residual_Exp_life_table%>%
   filter(Country == "France"  ,Age %in% 1:100, Gender == "Female") %>%
   select( Year , res_lex)
 
+exx <- life_table %>%
+  filter(Country == "France" , Gender == "Female", Year %in% 1933:1995)
+exxx <- exx$ex %>%
+  tibble()
+
 
 plot(rf2)
-plot(rf)
+rf2 %>%
+  ggplot(aes(x = res_lex_carter))
+
 ```
-
-
-
-
-
-
-
-
-
-
-
-kappa t en usa 
-et on a nevie de prolonger ? 
-
+```{r}
+life_table %>% subset(Year%in%seq(2000,2015,5) & Country == "USA" & Gender == "Male", select=c(Year,Age,qx))->df10
+qx_fitted=c(1:440)
+for(i in 1:4){
+  for(j in 1:110){
+    qx_fitted[(i-1)*110+j]=mat2[i,j]
+  }
+}
+qx_fitted = as.data.frame(qx_fitted)
+cbind.data.frame(df10,qx_fitted) -> df10
+df10%>% ggplot(mapping = aes(x=jitter(Age),y=jitter(qx)))+
+  geom_point(size=1,alpha=0.6)+
+  geom_point(data=df10, aes(x=Age, y=qx_fitted,color="blue")) +
+  facet_wrap(vars(Year))
+#Question life expectancy predict
+esp_vie=function(qx,age){
+  mx=qx/(1-qx/2)          #On calcule le vecteur de taux de mortalité mx en fonction de qx
+  return(sum(cumprod(as.numeric(1-mx[(age+1):length(mx)]))))
+}
+df_esp=function(df){                              # /!\ La fonction met à peu près 1 minute à s'éxécuter.
+  res.lex=c(1:dim(df)[1])
+  for (i in 1:((dim(df)[1])/110)){
+    for (j in 1:110){
+      res.lex[((i-1)*110)+j]=esp_vie(df$qx[((i-1)*110+1):(i*110)],(j-1))
+    }
+  }
+  df%>%
+    select(Year,Age)->m
+  res.lex=as.data.frame(res.lex)
+  p=cbind.data.frame(m,res.lex)
+  return(p)
+}
+df11=df_esp(df10)
+life_table%>%subset(Year%in%seq(2000,2015,5)&Gender=="Male"&Country=="USA",select=(c(ex)))->ex
+table((abs(df11$res.lex-ex))<0.5)
+```
 
