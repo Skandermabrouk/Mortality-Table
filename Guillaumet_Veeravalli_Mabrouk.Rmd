@@ -924,8 +924,8 @@ A_both <- life_table_pivot %>%
 M_usb <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_both
 svdUS_B <- svd(M_usb,1,1)
 s_USB <- svdUS_B$d[1]
-u_USB <- -1 *svdUS_B$u
-v_USB <- -1 *svdUS_B$v
+u_USB <- -1 *(svdUS_B$u * s_USB[1]) #kappa
+v_USB <- -1 *svdUS_B$v #beta
 ax_USB <- colMeans(A_both)
 #plot(Age, ax)
 #lines(Age,ax,col="red")
@@ -934,6 +934,7 @@ ax_USB <- colMeans(A_both)
 
 
 data <- tibble(age = 0:109, ax_USB)
+
 #alpha
 g_1 <- ggplot(data) + geom_point(aes(age,ax_USB)) +
   geom_line(aes(age,ax_USB), col = "red") +
@@ -960,54 +961,15 @@ gridExtra::grid.arrange(g_1,g_2,g_3, ncol = 2)
 ```
 # cOMPARE WITH SVD RANK 2 USING SCHMIDT NORM
 ```{r}
+res_USB <- svd(A_both)
+matUSB <- (res_USB$u[,1:2]) %*% diag(res_USB$d[1:2])%*%t(res_USB$v[,1:2])
+norm(matUSB - as.matrix(A_both)) #9.391412
 
-res2_f=svd(usa_f_df)
-A2_f=(res2_f$u[,1:2])%*%diag(res2_f$d[1:2])%*%t(res2_f$v[,1:2])
-mat_f=matrix(0,nrow=63,ncol=110) #mat modele lee carter
-for(i in 1:110){               #A2 modele svd tronqué rang 2
-  mat_f[,i]=a_f[i]+b_f[i]*k_f
+matLEEUSB = matrix(0,nrow = 63 , ncol = 110)
+for (i in 1:110){
+  matLEEUSB[,i] = t(ax_USB)[i] +v_USB[i]*u_USB
 }
-norm(mat_f-A2_f,"F") #Question 2
-norm(as.matrix(usa_f_df)-mat_f) #pour obtenir les epsilons
-
-#Lee Carter
-usa_m_df<-life_table_pivot%>%subset(Country=="USA"& Gender=="Male" & Year<1996,select=c(4:113))%>%log()
-a=colMeans(usa_m_df)
-id=matrix(1,nrow=63,ncol=1)
-res=usa_m_df-(id%*%t(a))
-res
-svd(res,1,1)
-s=svd(res,1,1)$d[1]
-k=svd(res,1,1)$u*s
-b=svd(res,1,1)$v
-res2=svd(usa_m_df)
-A2=(res2$u[,1:2])%*%diag(res2$d[1:2])%*%t(res2$v[,1:2])
-mat=matrix(0,nrow=63,ncol=110)
-for(i in 1:110){
-  mat[,i]=a[i]+b[i]*k
-}
-norm(mat-A2,"F") #Question 2
-norm(as.matrix(usa_m_df)-mat)
-#question 4
-k2=cbind(k,c(1933:1995))
-reg=lm(k2[,1]~k2[,2])
-as.data.frame(summary(reg)$coefficients)[1,1]->intercept
-as.data.frame(summary(reg)$coefficients)[2,1]->slope
-k_fitted=matrix(0,nrow=16,ncol=2)
-k_fitted[,1]=c(2000:2015)
-k_fitted[,2]=intercept+slope*k_fitted[,1]
-plot(k2[,2],k2[,1])
-plot(x=k_fitted[,1],y=k_fitted[,2])
-#Question 5
-mat_log=matrix(0,nrow=16,ncol=110)
-for(i in 1:110){
-  mat_log[,i]=a[i]+b[i]*k_fitted[,2]
-}
-mat_log %>% exp() %>% as.matrix() -> mat_exp
-life_table_pivot %>% subset(Country=="USA"& Gender=="Male" & Year%in%c(2000:2015),select=c(4:113)) %>% as.matrix() ->dfusa2000
-norm(mat_exp-dfusa2000,"F")
-mat2=rbind(mat_exp[1,],mat_exp[6,],mat_exp[11,],mat_exp[16,])
-abs(mat_exp[1,1]-dfusa2000[1,1])
+norm(matLEEUSB -as.matrix(A_both)) #7.820316
 
 
 ```
@@ -1026,7 +988,7 @@ A_F <- life_table_pivot %>%
 M_usf <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_F
 svdUS_F <- svd(M_usf,1,1)
 s_USF <- svdUS_F$d[1]
-u_USfSVD <- -1 *svdUS_F$u
+u_USfSVD <- -1 *(svdUS_F$u*s_USF)
 v_USfSVD <- -1 *svdUS_F$v
 ax_USfSVD <- colMeans(A_F)
 #plot(Age, ax_USfSVD)
@@ -1057,6 +1019,25 @@ g_3_USF <- ggplot(data_period_USF) + geom_point(aes(year,u_USfSVD)) +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_USF,g_2_USF,g_3_USF, ncol = 2)
 ```
+```{r}
+res_USF <- svd(A_F)
+matUSF <- (res_USF$u[,1:2]) %*% diag(res_USF$d[1:2])%*%t(res_USF$v[,1:2])
+norm(matUSF - as.matrix(A_F) , "F") #5.267916
+
+matLEEUSF = matrix(0,nrow = 63 , ncol = 110)
+for (i in 1:110){
+  matLEEUSF[,i] = t(ax_USfSVD)[i] +v_USfSVD[i]*u_USfSVD
+}
+norm(matLEEUSF -as.matrix(A_F), "F") #5.50236
+
+#5.5>5.2 donc le SVD rank 1 est faiblement meilleur que celui utilisé dans le modèle de lee Carter 
+
+# ecart de normes 
+#norm(matUSF - matLEEUSF , "F") #2.993924
+
+
+```
+
 
 # LEE CARTER SVD USA MALE
 ```{r}
@@ -1071,7 +1052,7 @@ A_M <- life_table_pivot %>%
 M_usm <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_M
 svdUS_M <- svd(M_usm,1,1)
 s_USM <- svdUS_M$d[1]
-u_USmSVD <- -1 *svdUS_M$u
+u_USmSVD <- -1 *(svdUS_M$u*s_USM)
 v_USmSVD <- -1 *svdUS_M$v
 ax_USmSVD <- colMeans(A_M)
 #plot(Age, ax_USmSVD)
@@ -1101,6 +1082,18 @@ g_3_USM <- ggplot(data_period_USM) + geom_point(aes(year,u_USmSVD)) +
   ggtitle("kappa estimating of USA Male") +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_USM,g_2_USM,g_3_USM, ncol = 2)
+```
+```{r}
+res_USM <- svd(A_M)
+matUSM <- (res_USM$u[,1:2]) %*% diag(res_USM$d[1:2])%*%t(res_USM$v[,1:2])
+norm(matUSM - as.matrix(A_M) , "F") #5.749655
+
+matLEEUSM = matrix(0,nrow = 63 , ncol = 110)
+for (i in 1:110){
+  matLEEUSM[,i] = t(ax_USmSVD)[i] +v_USmSVD[i]*u_USmSVD
+}
+norm(matLEEUSM -as.matrix(A_M), "F") #6.271101
+
 ```
 
 #LEE CARTER DEMOGDATA USA BOTH
@@ -1214,6 +1207,7 @@ plot(LCforUSB, parametricbx = FALSE)
 
 
 #LEE CARTER DEMOGDATA USA FEMALE
+
 ```{r,warning=FALSE,include=FALSE}
 uSA_femme <-life_table_pivot%>%
   dplyr::filter(Country == 'USA' , Gender == 'Female')%>%
@@ -1381,7 +1375,7 @@ A_FRB <- life_table_pivot %>%
 M_FRB <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_FRB
 svdFRB <- svd(M,1,1)
 s_FRB <- svdUS$d[1]
-u_FRB <- -1 *svdFRB$u
+u_FRB <- -1 *(svdFRB$u*s_FRB)
 v_FRB <- -1 *svdFRB$v
 ax_FRB <- colMeans(A_FRB)
 #plot(Age, ax)
@@ -1414,6 +1408,19 @@ gridExtra::grid.arrange(g_1_FRB,g_2_FRB,g_3_FRB, ncol = 2)
 ```
 
 ```{r}
+res_FRB <- svd(A_FRB)
+matFRB <- (res_FRB$u[,1:2]) %*% diag(res_FRB$d[1:2])%*%t(res_FRB$v[,1:2])
+norm(matFRB - as.matrix(A_FRB) , "F") #10.37236
+
+matLEEFRB = matrix(0,nrow = 63 , ncol = 110)
+for (i in 1:110){
+  matLEEFRB[,i] = t(ax_FRB)[i] +v_FRB[i]*u_FRB
+}
+norm(matLEEFRB -as.matrix(A_FRB), "F") #23.88194
+```
+
+
+```{r}
 #MALE
 Years <- 1933:1995
 T <- length(Years)
@@ -1426,7 +1433,7 @@ A_FRM <- life_table_pivot %>%
 M_FRM <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_FRM
 svdFRM <- svd(M_FRM,1,1)
 sFRM <- svdFRM$d[1]
-uFRM <- -1 *svdFRM$u
+uFRM <- -1 *(svdFRM$u*sFRM)
 vFRM <- -1 *svdFRM$v
 axFRM <- colMeans(A_FRM)
 #plot(Age, ax)
@@ -1456,6 +1463,18 @@ g_3_FRM <- ggplot(data_period_FRM) + geom_point(aes(year,uFRM)) +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_FRM,g_2_FRM,g_3_FRM, ncol = 2)
 ```
+```{r}
+res_FRM <- svd(A_FRM)
+matFRM <- (res_FRM$u[,1:2]) %*% diag(res_FRM$d[1:2])%*%t(res_FRM$v[,1:2])
+norm(matFRM - as.matrix(A_FRM) , "F") #11.30824
+
+matLEEFRM = matrix(0,nrow = 63 , ncol = 110)
+for (i in 1:110){
+  matLEEFRM[,i] = t(axFRM)[i] +vFRM[i]*uFRM
+}
+norm(matLEEFRM -as.matrix(A_FRM), "F") #12.07684
+```
+
 
 ```{r}
 #FEMALE
@@ -1470,7 +1489,7 @@ A_FRF <- life_table_pivot %>%
 M_FRF<- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_FRF
 svdFRF <- svd(M_FRF,1,1)
 sFRF <- svdFRF$d[1]
-uFRF <- -1 *svdFRF$u
+uFRF <- -1 *(svdFRF$u*sFRF)
 vFRF <- -1 *svdFRF$v
 axFRF <- colMeans(A_FRF)
 #plot(Age, ax)
@@ -1500,6 +1519,18 @@ g_3_FRF <- ggplot(data_period_FRF) + geom_point(aes(year,uFRF)) +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_FRF,g_2_FRF,g_3_FRF, ncol = 2)
 ```
+```{r}
+res_FRF <- svd(A_FRF)
+matFRF <- (res_FRF$u[,1:2]) %*% diag(res_FRF$d[1:2])%*%t(res_FRF$v[,1:2])
+norm(matFRF - as.matrix(A_FRF) , "F") #9.684005
+
+matLEEFRF = matrix(0,nrow = 63 , ncol = 110)
+for (i in 1:110){
+  matLEEFRF[,i] = t(axFRF)[i] +vFRF[i]*uFRF
+}
+norm(matLEEFRF -as.matrix(A_FRF), "F") #10.07679
+```
+
 
 #LEE CARTER DEMOG FRANCE MALE, BOTH, FEMALE
 
@@ -1728,27 +1759,40 @@ LCfit1 <- fit(LC, data =FRF , ages.fit=ages.fit , years.fit=years.fit)
 LCforFRF <- forecast(LCfit1, h=20)
 plot(LCforFRF, parametricbx = FALSE)
 ```
+### Petite Remarque sur la comparaison avec le SVD tronqué de rang 2
 
-```{r}
-#refaire un fit a partir les annees 1900 : 1990 
-```
+En général, la SVD tronquée au rang 2 fournit une meilleure approximation, mais elle n'est pas forcément meilleure de manière décisive, 
+car en termes de stockage, on sera obligé de stocker deux valeurs singulières pour la matrice diagonale, deux vecteurs de longueur le nombre de périodes  (2 * 50) et deux correspondant aux âges (2 * 100) 
+plutôt qu'un vecteur correspondant aux âges et un pour la période d'observation, 
+Par ailleurs, peut-être que cela ne fera pas une simple extension dans le temps pour la prévision,
+Comme l'intérêt de Lee Carter est qu'il semble facile d'étendre et d'extrapoler dans le temps... 
+
+ 
 
 
 #Predictions of life expectancies at different ages
 
 
 ```{r}
-rf2<-demography::life.expectancy(FRfemale)%>%
-  tibble() 
 
 rf<-Residual_Exp_life_table%>%
-  filter(Country == "France"  ,Age %in% 1:100, Gender == "Female") %>%
+  filter(Country == "France"  ,Age %in% 1:100, Gender == "Female", Year %in% 1933:1995) %>%
   select( Year , res_lex)
 
-exx <- life_table %>%
-  filter(Country == "France" , Gender == "Female", Year %in% 1933:1995)
-exxx <- exx$ex %>%
+
+
+lf =life.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
+   age = min(FRfemale$age),
+  max.age = min(100, max(FRfemale$age)))
+lf[118:180] %>%
   tibble()
+
+
+lf= flife.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
+   age= 9, max.age = 100)
+lf[118:180]
+
+
 
 
 plot(rf2)
@@ -1756,40 +1800,3 @@ rf2 %>%
   ggplot(aes(x = res_lex_carter))
 
 ```
-```{r}
-life_table %>% subset(Year%in%seq(2000,2015,5) & Country == "USA" & Gender == "Male", select=c(Year,Age,qx))->df10
-qx_fitted=c(1:440)
-for(i in 1:4){
-  for(j in 1:110){
-    qx_fitted[(i-1)*110+j]=mat2[i,j]
-  }
-}
-qx_fitted = as.data.frame(qx_fitted)
-cbind.data.frame(df10,qx_fitted) -> df10
-df10%>% ggplot(mapping = aes(x=jitter(Age),y=jitter(qx)))+
-  geom_point(size=1,alpha=0.6)+
-  geom_point(data=df10, aes(x=Age, y=qx_fitted,color="blue")) +
-  facet_wrap(vars(Year))
-#Question life expectancy predict
-esp_vie=function(qx,age){
-  mx=qx/(1-qx/2)          #On calcule le vecteur de taux de mortalité mx en fonction de qx
-  return(sum(cumprod(as.numeric(1-mx[(age+1):length(mx)]))))
-}
-df_esp=function(df){                              # /!\ La fonction met à peu près 1 minute à s'éxécuter.
-  res.lex=c(1:dim(df)[1])
-  for (i in 1:((dim(df)[1])/110)){
-    for (j in 1:110){
-      res.lex[((i-1)*110)+j]=esp_vie(df$qx[((i-1)*110+1):(i*110)],(j-1))
-    }
-  }
-  df%>%
-    select(Year,Age)->m
-  res.lex=as.data.frame(res.lex)
-  p=cbind.data.frame(m,res.lex)
-  return(p)
-}
-df11=df_esp(df10)
-life_table%>%subset(Year%in%seq(2000,2015,5)&Gender=="Male"&Country=="USA",select=(c(ex)))->ex
-table((abs(df11$res.lex-ex))<0.5)
-```
-
