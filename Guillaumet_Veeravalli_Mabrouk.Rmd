@@ -86,17 +86,19 @@ life_table48EUUSA
 La mortalité chez les nouveaux nés jusqu'aux trentenaires est beaucoup plus élevée en Europe qu'aux Etats-Unis, en particulier en Italie et en Espagne et dans une certaine mesure en France. Cependant, ce ratio converge assez rapidement vers 1 quand l'Age augmente. Un sursaut est remarquable entre 20-30 ans, mais passé la trentaine, le ratio semble se stabiliser vers 1, D'abord inférieur à 1 de 30 à 80 ans, il est quasiment égal à 1 (légèrement au dessous ou au dessus) à partir des 90 ans, pour l'ensemble des pays d'Europe considérés.
 Le taux de mortalité chez les jeunes aux Etats-Unis est donc plus faible qu'en Europe, mais il tend à être égal avec les autres pays quand les gens vieillissent.
 
-— Au lendemain de la seconde guerre mondiale, l’Europe est un continent devaste avec
+— Au lendemain de la seconde guerre mondiale, l’Europe est un continent dévaste avec
 une proportion importante de blesses tandis que les Etats-Unis n’ont pas connu de
-combats sur leur territoire. Ceci explique la mortalite accrue en Europe par un plus
+combats sur leur territoire. Ceci explique la mortalité accrue en Europe par un plus
 grand nombre de blesses (beaucoup de fronts de combats) entre 0 et 35 ans.
-— Cependant, les coefficients de mortalite s’harmonisent : on peut y voir plusieurs facteurs explicatifs :
-a) Creation de l’OMS le 7 avril 1948 (constitution adoptee en 1946 par 61 etats
+— Cependant, les coefficients de mortalité s’harmonisent : on peut y voir plusieurs facteurs explicatifs :
+
+a) Création de l’OMS le 7 avril 1948 (constitution adoptée en 1946 par 61 états
 membres) : ! La sante de tous les peuples est une condition fondamentale de la
-paix du monde et de la securite ; elle depend de la cooperation la plus etroite des
-individus et des Etats. ´ " (extrait du preambule de sa Constitution).
-b) On note qu’entre 2 ans et 55 ans environ, les quotients de mortalite sont faibles. On
-peut correler cela aux progres de la medecine, aux campagnes de sante publique
+paix du monde et de la sécurité ; elle dépend de la coopération la plus étroite des
+individus et des Etats. " (extrait du préambule de sa Constitution).
+
+b) On note qu’entre 2 ans et 55 ans environ, les quotients de mortalité sont faibles. On
+peut corréler cela aux progrès de la médecine, aux campagnes de sante publique
 et a l’absence de conflits armes en Europe Occidentale et aux Etats-Unis.
 
 
@@ -187,21 +189,20 @@ rm_TablePerRef10Wrap
 
 ##COMMENTER
 
-Au premier abord, on pourrait dire que les 14 courbes se ressemblent (7 pays et 1 caract`ere
+Au premier abord, on pourrait dire que les 14 courbes se ressemblent (7 pays et 1 caractère
 de genre). Cependant une analyse plus fine en lisant chaque ligne du graphe montre que
-les coefficients de mortalite augmentent plus tot chez les hommes (sous-representativite des
-femmes dans le marche de l’emploi : rappelons qu’avant 1965 une femme mariee ne pouvait
-ouvrir un compte bancaire ou signer un contrat de travail sans l’autorisation de son epoux).
-La penibilite et la durete de certains m´etiers masculins est grande (metiers de la siderurgie,
-de la peche et de l’extraction miniere,...).
-Cependant, si l’on compare 1946 et 2016, les statistiques montrent bien evidemment une
-am´elioration de toutes les esperances de vie dont les raisons sont multiples :
-— amelioration des conditions materielles de vie dans les pays occidentaux,
-— le travail est moins penible physiquement avec baisse du nombre d’heures de travail,
-3
-— tertiarisation de l’´economie,
-— meilleur acces aux soins,
-— progr`es de la m´edecine (en particulier dans les maladies respiratoires et dans le traitement de certains cancers),
+les coefficients de mortalité augmentent plus tôt chez les hommes (sous-représentativité des
+femmes dans le marche de l’emploi : rappelons qu’avant 1965 une femme mariée ne pouvait
+ouvrir un compte bancaire ou signer un contrat de travail sans l’autorisation de son époux).
+La pénibilité et la dureté de certains métiers masculins est grande (métiers de la sidérurgie,
+de la pêche et de l’extraction minière,...).
+Cependant, si l’on compare 1946 et 2016, les statistiques montrent bien évidemment une
+amélioration de toutes les espérances de vie dont les raisons sont multiples :
+— amélioration des conditions matérielles de vie dans les pays occidentaux,
+— le travail est moins pénible physiquement avec une baisse de nombre d’heures de travail,
+— tertiarisation de l’économie,
+— meilleur accès aux soins,
+— progrès de la médecine (en particulier dans les maladies respiratoires et dans le traitement de certains cancers),
 — plus grande attention des individus à leur sante, hygiène et alimentation,...
 
 
@@ -342,6 +343,9 @@ Res_Plot_Year_60_65 <- Residual_Exp_life_table %>% filter(Age %in% c(60,65)) %>%
   facet_grid(Country ~ Gender)
 Res_Plot_Year_60_65
 ```
+
+
+
 
 
 #PCA AND SVD LOG-MORTALITY
@@ -1775,53 +1779,42 @@ Comme l'intérêt de Lee Carter est qu'il semble facile d'étendre et d'extrapol
 
 ```{r}
 
-#rf<-Residual_Exp_life_table%>%
-#  filter(Country == "France"  ,Age %in% 1:100, Gender == "Female", Year %in% 1933:1995) %>%
-#  select( Year , res_lex)
+rf<-Residual_Exp_life_table%>%
+  filter(Country == "France"  ,Age %in% 1:100, Gender == "Female", Year %in% 1933:1995) %>%
+  select( Year , res_lex)
 
 
 
-#lf =life.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
-#   age = min(FRfemale$age),
-#  max.age = min(100, max(FRfemale$age)))
-#lf[118:180] %>%
-#  tibble()
-
-
-#lf= flife.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
-#   age= 9, max.age = 100)
-#lf[118:180]
-
-
-
-#residuals life of lee carter & observations 
-
-
-alphhh = LCforFRB$fitted
-t(alphhh)
-c <- c()
-for (i in 1:100){
-  a=ex_res(t(alphhh),i)
-  c <- c(c,a)
-}
-al =c %>%
+lf =life.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
+   age = min(FRfemale$age),
+  max.age = min(100, max(FRfemale$age)))
+lf[118:180] %>%
   tibble()
 
-al =cbind ("an" =rep(1933:1995,each=100),al)
+ex <- c()
+for (a in  1:100){
+lf= flife.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
+   age=a, max.age = 100)
 
-colnames(al)[2]<-"res_Lee"
+ex<- c(ex,lf[118:180])
+e_f <- cbind(ex,)
+
+}
+
+e_table <- ex %>%
+  tibble()
+
+colnames(e_table)[1] <- "res_Lee_Carter"
+
+e_final <-cbind (e_table, (1933:1995))
+colnames(e_final)[2] <- "annee"
+
+#e_final %>%
+#  ggplot(aes(e_final[,1], res_Lee_Carter)) %>%
+#  geom_point()
 
 
-al %>%
-  ggplot(aes(Year , res_Lee) ) +
-  geom_point(col = as.factor(levels(al$an)))
 
 
 
-
-
-
-
-```
-
-
+s```
