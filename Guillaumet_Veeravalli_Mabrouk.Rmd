@@ -1775,28 +1775,53 @@ Comme l'intérêt de Lee Carter est qu'il semble facile d'étendre et d'extrapol
 
 ```{r}
 
-rf<-Residual_Exp_life_table%>%
-  filter(Country == "France"  ,Age %in% 1:100, Gender == "Female", Year %in% 1933:1995) %>%
-  select( Year , res_lex)
+#rf<-Residual_Exp_life_table%>%
+#  filter(Country == "France"  ,Age %in% 1:100, Gender == "Female", Year %in% 1933:1995) %>%
+#  select( Year , res_lex)
 
 
 
-lf =life.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
-   age = min(FRfemale$age),
-  max.age = min(100, max(FRfemale$age)))
-lf[118:180] %>%
+#lf =life.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
+#   age = min(FRfemale$age),
+#  max.age = min(100, max(FRfemale$age)))
+#lf[118:180] %>%
+#  tibble()
+
+
+#lf= flife.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
+#   age= 9, max.age = 100)
+#lf[118:180]
+
+
+
+#residuals life of lee carter & observations 
+
+
+alphhh = LCforFRB$fitted
+t(alphhh)
+c <- c()
+for (i in 1:100){
+  a=ex_res(t(alphhh),i)
+  c <- c(c,a)
+}
+al =c %>%
   tibble()
 
+al =cbind ("an" =rep(1933:1995,each=100),al)
 
-lf= flife.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
-   age= 9, max.age = 100)
-lf[118:180]
-
+colnames(al)[2]<-"res_Lee"
 
 
+al %>%
+  ggplot(aes(Year , res_Lee) ) +
+  geom_point(col = as.factor(levels(al$an)))
 
-plot(rf2)
-rf2 %>%
-  ggplot(aes(x = res_lex_carter))
+
+
+
+
+
 
 ```
+
+
