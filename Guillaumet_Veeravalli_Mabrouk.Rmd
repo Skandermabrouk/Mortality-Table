@@ -126,7 +126,7 @@ life_tablePer10Wrap
 
 
 ```
-```{r, warning=FALSE}
+```{r, warning = false}
 (ggplot(data = life_table %>%
           filter(Gender!="Both", Year %in% seq(1946,2016,by=10)) ) +
    aes(x = Age, 
@@ -963,7 +963,7 @@ g_3 <- ggplot(data_period) + geom_point(aes(year,u_USB)) +
 
 gridExtra::grid.arrange(g_1,g_2,g_3, ncol = 2)
 ```
-# cOMPARE WITH SVD RANK 2 USING SCHMIDT NORM
+# cOMPARE WITH SVD RANK 2 USING SCHMIDT NORM (USA BOTH)
 ```{r}
 res_USB <- svd(A_both)
 matUSB <- (res_USB$u[,1:2]) %*% diag(res_USB$d[1:2])%*%t(res_USB$v[,1:2])
@@ -1023,6 +1023,7 @@ g_3_USF <- ggplot(data_period_USF) + geom_point(aes(year,u_USfSVD)) +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_USF,g_2_USF,g_3_USF, ncol = 2)
 ```
+#COMPARE WITH RANK 2 SVD (USA FEMALE)
 ```{r}
 res_USF <- svd(A_F)
 matUSF <- (res_USF$u[,1:2]) %*% diag(res_USF$d[1:2])%*%t(res_USF$v[,1:2])
@@ -1037,7 +1038,7 @@ norm(matLEEUSF -as.matrix(A_F), "F") #5.50236
 #5.5>5.2 donc le SVD rank 1 est faiblement meilleur que celui utilisé dans le modèle de lee Carter 
 
 # ecart de normes 
-#norm(matUSF - matLEEUSF , "F") #2.993924
+norm(matUSF - matLEEUSF , "F") #2.993924
 
 
 ```
@@ -1087,6 +1088,7 @@ g_3_USM <- ggplot(data_period_USM) + geom_point(aes(year,u_USmSVD)) +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_USM,g_2_USM,g_3_USM, ncol = 2)
 ```
+#COMPARE WITH RANK 2 SVD (USA MALE)
 ```{r}
 res_USM <- svd(A_M)
 matUSM <- (res_USM$u[,1:2]) %*% diag(res_USM$d[1:2])%*%t(res_USM$v[,1:2])
@@ -1410,6 +1412,7 @@ g_3_FRB<- ggplot(data_period_FRB) + geom_point(aes(year,u_FRB)) +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_FRB,g_2_FRB,g_3_FRB, ncol = 2)
 ```
+#COMPARE WITH RANK 2 SVD (FRANCE BOTH)
 
 ```{r}
 res_FRB <- svd(A_FRB)
@@ -1420,10 +1423,8 @@ matLEEFRB = matrix(0,nrow = 63 , ncol = 110)
 for (i in 1:110){
   matLEEFRB[,i] = t(ax_FRB)[i] +v_FRB[i]*u_FRB
 }
-norm(matLEEFRB -as.matrix(A_FRB), "F") #23.88194
+norm(matLEEFRB -as.matrix(A_FRB), "F") #13.72704
 ```
-
-
 ```{r}
 #MALE
 Years <- 1933:1995
@@ -1467,6 +1468,7 @@ g_3_FRM <- ggplot(data_period_FRM) + geom_point(aes(year,uFRM)) +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_FRM,g_2_FRM,g_3_FRM, ncol = 2)
 ```
+#COMPARE WITH RANK 2 SVD (FRANCE MALE)
 ```{r}
 res_FRM <- svd(A_FRM)
 matFRM <- (res_FRM$u[,1:2]) %*% diag(res_FRM$d[1:2])%*%t(res_FRM$v[,1:2])
@@ -1523,6 +1525,7 @@ g_3_FRF <- ggplot(data_period_FRF) + geom_point(aes(year,uFRF)) +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_FRF,g_2_FRF,g_3_FRF, ncol = 2)
 ```
+#COMPARE WITH RANK 2 SVD (FRANCE FEMALE)
 ```{r}
 res_FRF <- svd(A_FRF)
 matFRF <- (res_FRF$u[,1:2]) %*% diag(res_FRF$d[1:2])%*%t(res_FRF$v[,1:2])
@@ -1774,47 +1777,57 @@ Comme l'intérêt de Lee Carter est qu'il semble facile d'étendre et d'extrapol
  
 
 
-#Predictions of life expectancies at different ages
+#Predictions of life expectancies at different ages - France Female
+
+#GETTING EX PIVOT FROM LIFE TABLE
+```{r}
+ex_pivot_life <- function(life_table) {
+life_table_pivot <- life_table %>%
+  select(Country, Gender, Year, Age, ex) %>%
+    pivot_wider(
+      id_cols = c("Country","Gender","Year"),
+      names_from = Age,
+      values_from = ex
+    )
+return (life_table_pivot)
+}
+ex_life_table_pivot <-ex_pivot_life(life_table)
+```
 
 
 ```{r}
+#GETTING LIFE EXPECTANCY PREDICTIONS IN A DATAFRAME
 
-rf<-Residual_Exp_life_table%>%
-  filter(Country == "France"  ,Age %in% 1:100, Gender == "Female", Year %in% 1933:1995) %>%
-  select( Year , res_lex)
-
-
-
-lf =life.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
-   age = min(FRfemale$age),
-  max.age = min(100, max(FRfemale$age)))
-lf[118:180] %>%
-  tibble()
-
-ex <- c()
-for (a in  1:100){
-lf= flife.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
-   age=a, max.age = 100)
-
-ex<- c(ex,lf[118:180])
-e_f <- cbind(ex,)
-
+ex_predicted_fr_female <- tibble()
+for (a in  0:109){
+lf <- flife.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
+   age=a+1, max.age = 110)
+  lf <- as.vector(t(tibble(lf)))
+  ex_predicted_fr_female <- rbind(ex_predicted_fr_female,lf)
 }
+colnames(ex_predicted_fr_female) <- 1816:2017
+#glimpse(ex_predicted_fr_female)
 
-e_table <- ex %>%
-  tibble()
-
-colnames(e_table)[1] <- "res_Lee_Carter"
-
-e_final <-cbind (e_table, (1933:1995))
-colnames(e_final)[2] <- "annee"
-
-#e_final %>%
-#  ggplot(aes(e_final[,1], res_Lee_Carter)) %>%
-#  geom_point()
+ex_predicted_pivot_fr_female <- as.data.frame(t(ex_predicted_fr_female))
+Country <- rep("France", 202)
+Gender <- rep("Female", 202)
+Year <- 1816:2017
+colnames(ex_predicted_pivot_fr_female) <- 0:109
 
 
+ex_predicted_pivot_fr_female <-cbind(Country,Gender, Year,ex_predicted_pivot_fr_female) #now we have expectancy_pivot like qx pivot
+ex_observed_pivot_fr_female <- as.data.frame(ex_life_table_pivot %>% filter(Country == "France", Gender == "Female")) #and observed !!
+```
 
+```{r}
+#PLOTTING Theorical from prediction/Observed
+prediction_observed_ex_fr_female <- ex_observed_pivot_fr_female %>% ggplot() +
+  aes(x = Year, y = ex_observed_pivot_fr_female[,4]) +
+  geom_line(col = "red") +
+  geom_line(data = ex_predicted_pivot_fr_female, y = ex_predicted_pivot_fr_female[,4], col = "blue") +
+  #geom_line(data=ex_observed_pivot_fr_female, x = Year, y = ex_observed_pivot_fr_female[,4], col = "red") +
+  labs(y="Age", title = "Prediction of life expectancy at given age")
 
+prediction_observed_ex_fr_female
+```
 
-s```
