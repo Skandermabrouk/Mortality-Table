@@ -1,8 +1,10 @@
 ---
-title: "full_life_table"
+title: "Projet 2021 Analyse de Données"
+author : "Guillaumet Mabrouk Veeravalli"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
+  always_allow_html: true
 ---
 
 
@@ -24,6 +26,9 @@ pacman::p_load(ggfortify)
 pacman::p_load(pathlibr)
 pacman::p_load(demography)
 pacman::p_load(glue)
+pacman::p_load(StMoMo)
+library(plotly)
+pacman::p_load(readr)
 ```
 
 ```{r, include=FALSE}
@@ -40,17 +45,18 @@ if (! file.exists(fpath)){
 ```{r}
 knitr::kable(head(life_table))
 ```
-```{r}
+```{r,echo=FALSE,include=FALSE,warning=FALSE}
 levels(as.factor(life_table$Gender))
 ```
-##PLOT Qx Year 1948, Age, filter by Countries
+#  Western countries in 1948
+## Plot log-Qx for all countries for Year 1948
 ```{r}
 
 life_table48 <- life_table %>% filter( Year==1948) %>%
   ggplot() +
   geom_point(mapping = aes(y= qx, x= Age,col= Country),alpha=0.35) +
   scale_y_log10() +
-  ggtitle("mortality quotients  ")+
+  ggtitle("Mortality quotients  ")+
   labs(subtitle = "All Countries at all ages for year 1948")+
   theme(axis.text.x=element_text(angle=-45, hjust=0, vjust=1)) +xlab("Age") +ylab("log mortality")+
   theme(plot.title=element_text(size=12, hjust=0.5, face="bold", colour="maroon", vjust=-1)) +
@@ -59,11 +65,11 @@ life_table48 <- life_table %>% filter( Year==1948) %>%
 life_table48 
 ```
 
-###COMMENTER
+#### Commentaire
 
 Pour l'année 1948, le taux de mortalité est globalement le même pour tout les pays considérés. La mortalité infantile est non négligeable, répartie entre 8% pour l'Espagne à environ 2% en Suède, mais passé les deux premières années de vie, il est très peu probable de mourir jeune. Avant 45 ans, le risque pour tout les pays est inférieur à 1%. Cependant, passé cet âge, le taux de mortalité va commencer à croître de manière importante atteignant 10% vers 75 ans, pour être supérieur à 40% pour les plus de 105 ans, pour l'ensemble des pays.
 
-##PLOT EU/USA Qx ratio, Year 1948, Age, filter by Countries
+## Plot Eu Countries/USA Qx ratios, for Year 1948
 
 ```{r}
 life_table48EUUSA <- life_table %>% filter(Year==1948, Country!="USA") %>%
@@ -72,7 +78,7 @@ life_table48EUUSA <- life_table %>% filter(Year==1948, Country!="USA") %>%
   labs(y = "Eu Country/USA Qx Ratio") +
   geom_hline(yintercept = 1)+
   scale_y_log10() +
-  ggtitle("ratios between mortality quotients in European countries")+
+  ggtitle("Ratios between mortality quotients in European countries")+
   labs(subtitle = "and mortality quotients in the USA in 1948.")+
   theme(axis.text.x=element_text(angle=-45, hjust=0, vjust=1)) +xlab("Age") +ylab("log mortality ratio USA / European")+
   theme(plot.title=element_text(size=12, hjust=0.5, face="bold", colour="maroon", vjust=-1)) +
@@ -81,7 +87,7 @@ life_table48EUUSA <- life_table %>% filter(Year==1948, Country!="USA") %>%
 life_table48EUUSA 
 ```
 
-###COMMENTER
+#### Commentaire
 
 La mortalité chez les nouveaux nés jusqu'aux trentenaires est beaucoup plus élevée en Europe qu'aux Etats-Unis, en particulier en Italie et en Espagne et dans une certaine mesure en France. Cependant, ce ratio converge assez rapidement vers 1 quand l'Age augmente. Un sursaut est remarquable entre 20-30 ans, mais passé la trentaine, le ratio semble se stabiliser vers 1, D'abord inférieur à 1 de 30 à 80 ans, il est quasiment égal à 1 (légèrement au dessous ou au dessus) à partir des 90 ans, pour l'ensemble des pays d'Europe considérés.
 Le taux de mortalité chez les jeunes aux Etats-Unis est donc plus faible qu'en Europe, mais il tend à être égal avec les autres pays quand les gens vieillissent.
@@ -103,9 +109,9 @@ et a l’absence de conflits armes en Europe Occidentale et aux Etats-Unis.
 
 
 
-#5 Death Rate Evoution since WWII
+# Death Rate Evoution since WWII
 
-##PLOTS AND FACET
+## Death Rate Evolution since WWII, using facet
 
 ```{r}
 life_tablePer10 <- life_table %>% filter(Gender!="Both", Year %in% seq(1946,2016,by=10))  %>%
@@ -126,7 +132,8 @@ life_tablePer10Wrap
 
 
 ```
-```{r, warning = false}
+## Death Rate Evolution since WWII throughout time
+```{r}
 (ggplot(data = life_table %>%
           filter(Gender!="Both", Year %in% seq(1946,2016,by=10)) ) +
    aes(x = Age, 
@@ -143,7 +150,7 @@ life_tablePer10Wrap
 Sur le graphique animé, il est facile de voir que la mortalité à la naissance diminue avec le temps, ce qui est également le cas pour les âges de 1 à 60 ans. 
 
 
-##Ratio_Mortality
+## Mortality Ratio Function
 ```{r}
 ratio_mortality_rates <- function(df,
                                   reference_year=1946,
@@ -166,7 +173,7 @@ rm_Table <- ratio_mortality_rates(life_table, reference_year = 1946 , target_yea
 rm_Table %>%
   dplyr::slice_sample(n = 7, replace = FALSE)
 ```
-##PLOT Ratio_Mortality
+## Plot Mortality Ratios with USA as reference from 1946
 
 ```{r,warning=FALSE}
 rm_TablePerRef <- rm_Table %>% filter(Gender!="Both", Year.x %in% seq(1946,2016,10))  %>%
@@ -175,7 +182,7 @@ rm_TablePerRef <- rm_Table %>% filter(Gender!="Both", Year.x %in% seq(1946,2016,
   scale_y_log10() +
   ggtitle("ratio of mortality rates, reference year 1946")+
   labs(subtitle = "for All ages ")+
-  theme(axis.text.x=element_text(angle=-45, hjust=0, vjust=1)) +xlab("Age") +ylab("ratio of mortality rates, reference year 1946")+
+  theme(axis.text.x=element_text(angle=-45, hjust=0, vjust=1)) +xlab("Age") +ylab("Ratio of mortality rates, reference year 1946")+
   theme(plot.title=element_text(size=12, hjust=0.5, face="bold", colour="maroon", vjust=-1)) +
    theme(plot.subtitle=element_text(size=10, hjust=0.5, face="italic", color="black"))
 
@@ -187,7 +194,7 @@ rm_TablePerRef10Wrap
 ```
 
 
-##COMMENTER
+#### Commentaire
 
 Au premier abord, on pourrait dire que les 14 courbes se ressemblent (7 pays et 1 caractère
 de genre). Cependant une analyse plus fine en lisant chaque ligne du graphe montre que
@@ -206,10 +213,10 @@ amélioration de toutes les espérances de vie dont les raisons sont multiples :
 — plus grande attention des individus à leur sante, hygiène et alimentation,...
 
 
-#6 Trends 
+# Trends 
 
 
-##PLOT ET COMMENT
+## Plot of log-mortality rates at birth and at age 1 & 5
 ```{r, warning=FALSE}
 life_table %>%
   filter(Age %in% c(0,1,5), Gender != "Both") %>%
@@ -223,6 +230,7 @@ life_table %>%
    theme(plot.subtitle=element_text(size=10, hjust=0.5, face="italic", color="black"))+
   facet_grid(Country~Gender, scales = 'free')
 ```
+#### Commentaire
 Les tendances sont identiques : les quotients de mortalit´e baissent tous en fonction du temps.
 Pour les enfants de moins 5 ans, la baisse est plus importante (dˆus aux progres de la vaccination et des mesures d’hygi`ene). Les courbes sont presque identiques avec les mˆemes pics.
 A l’ˆage de 5 ans, les quotients sont presque nuls. `
@@ -233,7 +241,7 @@ les 2 guerres mondiales et les ´epid´emies (par exemple, ´epid´emies de chol
 
 
 
-##PLOT ET COMMENT
+## Plot of log-mortality rates at age 15, 20, 40 & 60
 ```{r}
 life_table %>%
   filter(Age %in% c(15,20,40,60)) %>% #Exclure Gender Both ?
@@ -247,6 +255,7 @@ life_table %>%
    theme(plot.subtitle=element_text(size=10, hjust=0.5, face="italic", color="black"))+
   facet_grid(Country~Gender, scales = 'free')
 ```
+#### Commentaire
 
 On remarque que le Royaume-Uni, la France et l'Italie ont connu un pic de mortalité au début du 20e siècle pour les personnes étant âgées de 20 ans, cela étant expliqué par la 1ère Guerre Mondiale, qui a ravagé ces pays.
 On remarque, de plus, qu'en Suède, les personnes de 40 à 60 ans décèdent en grand nombre: cela est dû aux épidémies de variole qui ont sévi au 19e siècle.
@@ -255,7 +264,9 @@ Il  y a un pic de mortalité pour les hommes hollandais : cela s'explique par l'
 Enfin, on observe un nombre accru de morts pour les hommes âgés de 40 à 60 ans aux USA: cela est dû à l'épidémie de polyomiélite dans ce pays.
 
 
-#7 Rearrangement 
+# Rearrangement
+
+## Pivot Life Table
 ```{r}
 pivot_life <- function(life_table) {
 life_table_pivot <- life_table %>%
@@ -272,7 +283,7 @@ life_table_pivot <-pivot_life(life_table)
 ```
 
 
-Calcul de l'esperance de vie à la naissance d'une population selon une année A;
+### Calculation of life expectancy at birth of a population by year A
 
 ```{r}
 fun <- function(x) {return(1-identity(x))}
@@ -290,7 +301,9 @@ life_exp <- life_exp[,-c(5:114)]
 life_exp %>%
   glimpse()
 ```
-#8 LIFE EXPECTANCY
+#  Expectancy
+
+## Life Expectancy Function for a given age
 ```{r,include=FALSE}
 ex_res <- function(v_qx, age) {
   if (age > 0) {
@@ -309,7 +322,9 @@ ex_res(life_table_pivot[1,4:113], 0) #40.13393
 ex_res(life_table_pivot[1,4:113], 1) #47.81757
 ex_res(life_table_pivot[1,4:113], 70)#8.291226
 ```
-#8 RES LIFE EXPECTANCY TABLE
+## Res life expectancy table
+
+
 ```{r}
 ex_res_table <- function(df) {
   tri <- df
@@ -323,13 +338,23 @@ ex_res_table <- function(df) {
   exp_res_life_table <- tri[c(1,2,11,12)] %>% cbind(res_lex)
   return(exp_res_life_table) 
 }
-#ALGORITHME TRES GOURMAND EN RESSOURCES DONC ON A SAUVEGARDER LE RESULTAT EN .Rds
+
+
+```
+```{r}
+#-----------------------------------------------
+
+#Make sure to have the Residual_Exp_life_table.Rds given in the .rar folder loaded into the path of the project.
+
+#-----------------------------------------------
+
 Residual_Exp_life_table <- readr::read_rds("Residual_Exp_life_table.rds")
 
 Residual_Exp_life_table%>%
   head()
 ```
-#PLOTTING RESIDUAL LIFE EXPECTANCY AT AGE 60 AND 65
+
+### Plotting residuals life expectancy at age 60 and 65
 
 ```{r}
 Res_Plot_Year_60_65 <- Residual_Exp_life_table %>% filter(Age %in% c(60,65)) %>%
@@ -348,10 +373,9 @@ Res_Plot_Year_60_65
 
 
 
-#PCA AND SVD LOG-MORTALITY
+# PCA and SVD over Log-Mortality for France, Female
 
 ```{r setup, include=FALSE}
-library(ggplot2)
 fr_pca_f <- life_table_pivot %>%
   filter(Country =='France' , Gender == 'Female' , Year %in% 1948:2010)
 fr_pca_f[,4:113] = log(fr_pca_f[,4:113])
@@ -417,6 +441,8 @@ s4 <- fviz_eig(resultsFT) +
   theme(plot.title=element_text(size=12, hjust=0.5, face="bold", colour="maroon", vjust=-1)) 
 gridExtra::grid.arrange(s1,s2,s3,s4,ncol=2,nrow=2)
 ```
+#### Commentaires sur les screeplots
+
 On constate que le premier graphique (le cas : normalisé et centré) qui est réellement intéressant. le PC1 garde la grande majorité de la variance (93% environ) tout en gardant le reste sur les PC2,3 et 4. Les autres configurations (TF,FF,FT)* ont la variance à presque 100% expliquée par le PC1 dans les 3 cas.
 
 *TF : Normalisé non centré
@@ -461,6 +487,7 @@ gridExtra::grid.arrange(ss1,ss2,ss3,ss4,ncol=2,nrow=2)
 
 
 ```
+#### Commentaires sur les cercles de corrélations
 
 Les 2 graphiques à droite sont les graphiques des PCA non centrées. Ils n'ont pas de grande utilité.
 
@@ -504,14 +531,15 @@ f4<-fviz_pca_biplot(resultsFT,repel = TRUE ,col.var = "Grey" ,col.ind = "Blue")+
 
 gridExtra::grid.arrange(f1,f2,f3,f4, ncol= 2, nrow = 2)
 ```
+#### Commentaires sur les biplots
+
 Dans le cas centré normalisé, on constate que les vecteurs variables dans le biplot contribuent fortement au premier axe, et c'est le meme cas pour les individus. Il existe quelques individus qui sont eloignés des autres, exemple, le n°1 et 3.
 Une interprétation plutôt simple est qu'importe son âge (entre 0 et 110, on vit toujours mieux en 2010 qu'en 1948, c'est pour ça que la variable Year est la plus grande contribution du PC1, les premières années (1948) considérées contribuent négativement à la PC1 et que les plus récentes y contribuent positivement.
 
 Dans les autres cas, il n'y a pas vraiment d'interprétation à faire.
 
 
-#CHOIX DU PCA CENTER = TRUE, SCALE
-
+## PCA for all Countries
 
 ```{r}
 #female 
@@ -906,16 +934,12 @@ De plus, si l'on regarde les courbes au début de l'année 1945, on constate que
 -> On devrait avoir intérêt à centrer et standardiser lorsqu'on réalise une seule ACP, sauf qu'ici on en réalise plusieurs simultanément, donc on met tout le monde dans le même sac et on perd de vue les pays qui ont bougé plus/moins que les autres
  
 
-#LEE CARTER MODEL
+# Lee Carter Model
 
 # Données US
 
-```{r}
-pacman::p_load(forecast)
-pacman::p_load(lifecontingencies)
-```
 
-# LEE CARTER SVD USA BOTH
+## Lee Carter from SVD parameters for USA Both
 ```{r}
 Years <- 1933:1995
 T <- length(Years)
@@ -963,7 +987,7 @@ g_3 <- ggplot(data_period) + geom_point(aes(year,u_USB)) +
 
 gridExtra::grid.arrange(g_1,g_2,g_3, ncol = 2)
 ```
-# cOMPARE WITH SVD RANK 2 USING SCHMIDT NORM (USA BOTH)
+### Comparing Norms with Truncated Rank 2 SVD for USA Both
 ```{r}
 res_USB <- svd(A_both)
 matUSB <- (res_USB$u[,1:2]) %*% diag(res_USB$d[1:2])%*%t(res_USB$v[,1:2])
@@ -979,7 +1003,7 @@ norm(matLEEUSB -as.matrix(A_both)) #7.820316
 ```
 
 
-# LEE CARTER SVD USA FEMALE
+## Lee Carter from SVD parameters for USA Female
 ```{r}
 Years <- 1933:1995
 T <- length(Years)
@@ -1023,7 +1047,7 @@ g_3_USF <- ggplot(data_period_USF) + geom_point(aes(year,u_USfSVD)) +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_USF,g_2_USF,g_3_USF, ncol = 2)
 ```
-#COMPARE WITH RANK 2 SVD (USA FEMALE)
+### Comparing Norms with Truncated Rank 2 SVD for USA Female
 ```{r}
 res_USF <- svd(A_F)
 matUSF <- (res_USF$u[,1:2]) %*% diag(res_USF$d[1:2])%*%t(res_USF$v[,1:2])
@@ -1038,13 +1062,13 @@ norm(matLEEUSF -as.matrix(A_F), "F") #5.50236
 #5.5>5.2 donc le SVD rank 1 est faiblement meilleur que celui utilisé dans le modèle de lee Carter 
 
 # ecart de normes 
-norm(matUSF - matLEEUSF , "F") #2.993924
+#norm(matUSF - matLEEUSF , "F") #2.993924
 
 
 ```
 
 
-# LEE CARTER SVD USA MALE
+## Lee Carter from Demog parameters for USA, Both
 ```{r}
 Years <- 1933:1995
 T <- length(Years)
@@ -1088,7 +1112,7 @@ g_3_USM <- ggplot(data_period_USM) + geom_point(aes(year,u_USmSVD)) +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_USM,g_2_USM,g_3_USM, ncol = 2)
 ```
-#COMPARE WITH RANK 2 SVD (USA MALE)
+### Comparing Norms with Truncated Rank 2 SVD for USA Male
 ```{r}
 res_USM <- svd(A_M)
 matUSM <- (res_USM$u[,1:2]) %*% diag(res_USM$d[1:2])%*%t(res_USM$v[,1:2])
@@ -1102,7 +1126,7 @@ norm(matLEEUSM -as.matrix(A_M), "F") #6.271101
 
 ```
 
-#LEE CARTER DEMOGDATA USA BOTH
+## Lee Carter from Demog parameters for USA, Both
 ```{r, warning=FALSE,include=FALSE}
 uSA_both <-life_table_pivot%>%
   dplyr::filter(Country == 'USA' , Gender == 'Both')%>%
@@ -1110,7 +1134,6 @@ uSA_both <-life_table_pivot%>%
 svdbothus <- svd(uSA_both ,nv=2)
 summary(svdbothus) %>%
   knitr::kable()
-library(reshape2)
 
 pivot_life_lx <- function(life_table) {
 pivot_life_lx <- life_table %>%
@@ -1122,7 +1145,6 @@ pivot_life_lx <- life_table %>%
     )
 return (pivot_life_lx)
 }
-library(tidyverse)
 l__x <- pivot_life_lx(life_table)
 lx_bothUsa<- l__x %>%
   filter(Country == 'USA' , Gender == 'Both') %>%
@@ -1151,14 +1173,12 @@ constLC <- function (ax, bx,kt ,b0x, gc ,wxt ,ages) {
        bx=bx[,1]/c2 ,
        kt=c2*(kt[1,]-c1))
 }
-library(StMoMo)
 LC <- StMoMo(link = "log" , staticAgeFun = TRUE , periodAgeFun = "NP" , constFun = constLC)
 LC <- lc()
 USB <- StMoMoData(USboth , series = "Both")
 ages.fit <- 1:110
 years.fit <- 1933:1995
 LCfit1 <- fit(LC, data =USB , ages.fit=ages.fit , years.fit=years.fit)
-
 ```
 
 ```{r}
@@ -1172,13 +1192,13 @@ data_1 <- tibble(age = 1:110, a1)
 g11 <- ggplot(data_1) + geom_point(aes(age,a1)) +
   geom_line(aes(age,a1), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA  Both DEMOGDATA") +
+  ggtitle("Alpha estimating of USA Both") +
   labs(y = bquote(hat(alpha)[x]^"(1)"))
 #beta
 g12 <- ggplot(data_1) + geom_point(aes(age,b1)) +
   geom_line(aes(age,b1), col = "red") +
   theme_bw() +
-  ggtitle("Beta estimating of USA Both DEMOGDATA") +
+  ggtitle("Beta estimating of USA Both ") +
   labs(y = bquote(hat(beta)[x]^"(1)"))
 
 #kappa
@@ -1187,16 +1207,17 @@ data_period <- tibble(year = 1933:1995, k1)
 g13 <- ggplot(data_period_USM) + geom_point(aes(year,k1)) +
   geom_line(aes(year,k1), col = "red") +
   theme_bw() +
-  ggtitle("kappa estimating of USA  Both DEMOGDATA") +
+  ggtitle("kappa estimating of USA Both ") +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g11,g12,g13, ncol = 2)
 ```
-
+### Plotting Residuals for a quick review
 ```{r}
 #goodness-of-fit:  residuals 
 LcresUSB <- residuals(LCfit1)
 #plot(LcresUSB, type = "colourmap" )
 plot(LcresUSB)
+title("Goodness of fit")
 ```
 
 ```{r}
@@ -1212,7 +1233,7 @@ plot(LCforUSB, parametricbx = FALSE)
 ```
 
 
-#LEE CARTER DEMOGDATA USA FEMALE
+## Lee Carter from Demog parameters for USA, Female
 
 ```{r,warning=FALSE,include=FALSE}
 uSA_femme <-life_table_pivot%>%
@@ -1221,7 +1242,6 @@ uSA_femme <-life_table_pivot%>%
 svdfemmeus <- svd(uSA_femme ,nv=2)
 summary(svdfemmeus) %>%
   knitr::kable()
-library(reshape2)
 
 pivot_life_lx <- function(life_table) {
 pivot_life_lx <- life_table %>%
@@ -1233,7 +1253,6 @@ pivot_life_lx <- life_table %>%
     )
 return (pivot_life_lx)
 }
-library(tidyverse)
 l__x <- pivot_life_lx(life_table)
 lx_femaleUsa<- l__x %>%
   filter(Country == 'USA' , Gender == 'Female') %>%
@@ -1262,7 +1281,6 @@ constLC <- function (ax, bx,kt ,b0x, gc ,wxt ,ages) {
        bx=bx[,1]/c2 ,
        kt=c2*(kt[1,]-c1))
 }
-library(StMoMo)
 LC <- StMoMo(link = "log" , staticAgeFun = TRUE , periodAgeFun = "NP" , constFun = constLC)
 LC <- lc()
 USF <- StMoMoData(USfemale , series = "Female")
@@ -1289,7 +1307,7 @@ LCforUSF <- forecast(LCfit1, h=20)
 plot(LCforUSF, parametricbx = FALSE)
 ```
 
-#LEE CARTER DEMOG USA MALE
+## Lee Carter from Demog parameters for USA, Male
 
 ```{r,warning=FALSE,include=FALSE}
 uSA_homme <-life_table_pivot%>%
@@ -1309,7 +1327,6 @@ pivot_life_lx <- life_table %>%
     )
 return (pivot_life_lx)
 }
-library(tidyverse)
 l__x <- pivot_life_lx(life_table)
 lx_maleUsa<- l__x %>%
   filter(Country == 'USA' , Gender == 'Male') %>%
@@ -1338,7 +1355,6 @@ constLC <- function (ax, bx,kt ,b0x, gc ,wxt ,ages) {
        bx=bx[,1]/c2 ,
        kt=c2*(kt[1,]-c1))
 }
-library(StMoMo)
 LC <- StMoMo(link = "log" , staticAgeFun = TRUE , periodAgeFun = "NP" , constFun = constLC)
 LC <- lc()
 USM <- StMoMoData(USmale , series = "Male")
@@ -1364,9 +1380,9 @@ plot(LCforUSM, parametricbx = FALSE)
 ```
 
 
-#DONNEE FRANCE
+# Données France
 
-# LEE CARTER SVD FRANCE BOTH, MALE, FEMALE
+## LEE CARTER SVD FRANCE BOTH, MALE, FEMALE
 ```{r}
 #BOTH
 
@@ -1379,8 +1395,8 @@ A_FRB <- life_table_pivot %>%
   log() %>%
   as.matrix()
 M_FRB <- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_FRB
-svdFRB <- svd(M,1,1)
-s_FRB <- svdUS$d[1]
+svdFRB <- svd(M_FRB,1,1)
+s_FRB <- svdFRB$d[1]
 u_FRB <- -1 *(svdFRB$u*s_FRB)
 v_FRB <- -1 *svdFRB$v
 ax_FRB <- colMeans(A_FRB)
@@ -1393,13 +1409,13 @@ data_FRB <- tibble(age = 0:109, ax_FRB)
 g_1_FRB <- ggplot(data_FRB) + geom_point(aes(age,ax_FRB)) +
   geom_line(aes(age,ax_FRB), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA Male") +
+  ggtitle("Alpha estimating of France Both") +
   labs(y = bquote(hat(alpha)[x]^"(1)"))
 #beta
 g_2_FRB <- ggplot(data_FRB) + geom_point(aes(age,v_FRB)) +
   geom_line(aes(age,v_FRB), col = "red") +
   theme_bw() +
-  ggtitle("beta estimating of USA Male") +
+  ggtitle("beta estimating of France Both") +
   labs(y = bquote(hat(beta)[x]^"(1)"))
 
 #kappa
@@ -1408,11 +1424,11 @@ data_period_FRB <- tibble(year = 1933:1995, u_FRB)
 g_3_FRB<- ggplot(data_period_FRB) + geom_point(aes(year,u_FRB)) +
   geom_line(aes(year,u_FRB), col = "red") +
   theme_bw() +
-  ggtitle("kappa estimating of USA Male") +
+  ggtitle("kappa estimating of France Both") +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_FRB,g_2_FRB,g_3_FRB, ncol = 2)
 ```
-#COMPARE WITH RANK 2 SVD (FRANCE BOTH)
+### Comparing Norms with Truncated Rank 2 SVD for France Both
 
 ```{r}
 res_FRB <- svd(A_FRB)
@@ -1425,6 +1441,8 @@ for (i in 1:110){
 }
 norm(matLEEFRB -as.matrix(A_FRB), "F") #13.72704
 ```
+## Lee Carter from SVD parameters for France, Male
+
 ```{r}
 #MALE
 Years <- 1933:1995
@@ -1449,13 +1467,13 @@ data_FRM <- tibble(age = 0:109, axFRM)
 g_1_FRM <- ggplot(data_FRM) + geom_point(aes(age,ax_USmSVD)) +
   geom_line(aes(age,ax_USmSVD), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA Male") +
+  ggtitle("Alpha estimating of France Male") +
   labs(y = bquote(hat(alpha)[x]^"(1)"))
 #beta
 g_2_FRM <- ggplot(data_FRM) + geom_point(aes(age,vFRM)) +
   geom_line(aes(age,vFRM), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA Male") +
+  ggtitle("Alpha estimating of France Male") +
   labs(y = bquote(hat(beta)[x]^"(1)"))
 
 #kappa
@@ -1464,11 +1482,11 @@ data_period_FRM <- tibble(year = 1933:1995, uFRM)
 g_3_FRM <- ggplot(data_period_FRM) + geom_point(aes(year,uFRM)) +
   geom_line(aes(year,uFRM), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA Male") +
+  ggtitle("Alpha estimating of France Male") +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_FRM,g_2_FRM,g_3_FRM, ncol = 2)
 ```
-#COMPARE WITH RANK 2 SVD (FRANCE MALE)
+### Comparing Norms with Truncated Rank 2 SVD for France Male
 ```{r}
 res_FRM <- svd(A_FRM)
 matFRM <- (res_FRM$u[,1:2]) %*% diag(res_FRM$d[1:2])%*%t(res_FRM$v[,1:2])
@@ -1480,7 +1498,7 @@ for (i in 1:110){
 }
 norm(matLEEFRM -as.matrix(A_FRM), "F") #12.07684
 ```
-
+## Lee Carter from SVD parameters for France, Female
 
 ```{r}
 #FEMALE
@@ -1506,13 +1524,13 @@ data_FRF <- tibble(age = 0:109, axFRF)
 g_1_FRF <- ggplot(data_FRF) + geom_point(aes(age,axFRF)) +
   geom_line(aes(age,axFRF), col = "red") +
   theme_bw() +
-  ggtitle("Alpha estimating of USA FEMale") +
+  ggtitle("Alpha estimating of France Female") +
   labs(y = bquote(hat(alpha)[x]^"(1)"))
 #beta
 g_2_FRF <- ggplot(data_FRF) + geom_point(aes(age,vFRF)) +
   geom_line(aes(age,vFRF), col = "red") +
   theme_bw() +
-  ggtitle("beta estimating of USA FEMale") +
+  ggtitle("beta estimating of France Female") +
   labs(y = bquote(hat(beta)[x]^"(1)"))
 
 #kappa
@@ -1521,11 +1539,11 @@ data_period_FRF <- tibble(year = 1933:1995, uFRF)
 g_3_FRF <- ggplot(data_period_FRF) + geom_point(aes(year,uFRF)) +
   geom_line(aes(year,uFRF), col = "red") +
   theme_bw() +
-  ggtitle("kappa estimating of USA FEMale") +
+  ggtitle("kappa estimating of France Female") +
   labs(y = bquote(hat(kappa)[t]^"(1)"))
 gridExtra::grid.arrange(g_1_FRF,g_2_FRF,g_3_FRF, ncol = 2)
 ```
-#COMPARE WITH RANK 2 SVD (FRANCE FEMALE)
+### Comparing Norms with Truncated Rank 2 SVD for France Female
 ```{r}
 res_FRF <- svd(A_FRF)
 matFRF <- (res_FRF$u[,1:2]) %*% diag(res_FRF$d[1:2])%*%t(res_FRF$v[,1:2])
@@ -1539,7 +1557,7 @@ norm(matLEEFRF -as.matrix(A_FRF), "F") #10.07679
 ```
 
 
-#LEE CARTER DEMOG FRANCE MALE, BOTH, FEMALE
+## Lee Carter from demog parameters for France, Male
 
 ```{r,include=FALSE,warning=FALSE}
 #MALE
@@ -1562,7 +1580,6 @@ pivot_life_lx <- life_table %>%
     )
 return (pivot_life_lx)
 }
-library(tidyverse)
 l__x <- pivot_life_lx(life_table)
 lx_maleFR<- l__x %>%
   filter(Country == 'France' , Gender == 'Male') %>%
@@ -1591,7 +1608,6 @@ constLC <- function (ax, bx,kt ,b0x, gc ,wxt ,ages) {
        bx=bx[,1]/c2 ,
        kt=c2*(kt[1,]-c1))
 }
-library(StMoMo)
 LC <- StMoMo(link = "log" , staticAgeFun = TRUE , periodAgeFun = "NP" , constFun = constLC)
 LC <- lc()
 FRM <- StMoMoData(FRmale, series = "Male")
@@ -1616,7 +1632,7 @@ LCforFRM <- forecast(LCfit1, h=20)
 plot(LCforFRM, parametricbx = FALSE)
 ```
 
-
+## Lee Carter from demog parameters for France, Both
 ```{r,include=FALSE,warning=FALSE}
 #BOTH
 FR_both <-life_table_pivot%>%
@@ -1638,7 +1654,6 @@ pivot_life_lx <- life_table %>%
     )
 return (pivot_life_lx)
 }
-library(tidyverse)
 l__x <- pivot_life_lx(life_table)
 lx_bothFR<- l__x %>%
   filter(Country == 'France' , Gender == 'Both') %>%
@@ -1667,7 +1682,6 @@ constLC <- function (ax, bx,kt ,b0x, gc ,wxt ,ages) {
        bx=bx[,1]/c2 ,
        kt=c2*(kt[1,]-c1))
 }
-library(StMoMo)
 LC <- StMoMo(link = "log" , staticAgeFun = TRUE , periodAgeFun = "NP" , constFun = constLC)
 LC <- lc()
 FRB <- StMoMoData(FRboth , series = "Both")
@@ -1691,7 +1705,7 @@ LCfit1 <- fit(LC, data =FRB , ages.fit=ages.fit , years.fit=years.fit)
 LCforFRB <- forecast(LCfit1, h=20)
 plot(LCforFRB, parametricbx = FALSE)
 ```
-
+## Lee Carter from demog parameters for France, Female
 ```{r,include=FALSE,warning=FALSE}
 #FEMALE
 FR_female <-life_table_pivot%>%
@@ -1713,7 +1727,6 @@ pivot_life_lx <- life_table %>%
     )
 return (pivot_life_lx)
 }
-library(tidyverse)
 l__x <- pivot_life_lx(life_table)
 lx_femaleFR<- l__x %>%
   filter(Country == 'France' , Gender == 'Female') %>%
@@ -1742,7 +1755,6 @@ constLC <- function (ax, bx,kt ,b0x, gc ,wxt ,ages) {
        bx=bx[,1]/c2 ,
        kt=c2*(kt[1,]-c1))
 }
-library(StMoMo)
 LC <- StMoMo(link = "log" , staticAgeFun = TRUE , periodAgeFun = "NP" , constFun = constLC)
 LC <- lc()
 FRF <- StMoMoData(FRfemale , series = "Female")
@@ -1765,8 +1777,9 @@ LCfit1 <- fit(LC, data =FRF , ages.fit=ages.fit , years.fit=years.fit)
 #forcasting 
 LCforFRF <- forecast(LCfit1, h=20)
 plot(LCforFRF, parametricbx = FALSE)
+
 ```
-### Petite Remarque sur la comparaison avec le SVD tronqué de rang 2
+#### Petite Remarque sur la comparaison avec le SVD tronqué de rang 2
 
 En général, la SVD tronquée au rang 2 fournit une meilleure approximation, mais elle n'est pas forcément meilleure de manière décisive, 
 car en termes de stockage, on sera obligé de stocker deux valeurs singulières pour la matrice diagonale, deux vecteurs de longueur le nombre de périodes  (2 * 50) et deux correspondant aux âges (2 * 100) 
@@ -1774,13 +1787,28 @@ plutôt qu'un vecteur correspondant aux âges et un pour la période d'observati
 Par ailleurs, peut-être que cela ne fera pas une simple extension dans le temps pour la prévision,
 Comme l'intérêt de Lee Carter est qu'il semble facile d'étendre et d'extrapoler dans le temps... 
 
- 
+
+#### Remarque générale sur le forecast de Lee-Carter
+
+D'après les simulations, la modélisation du taux de mortalité pour différents pays à l'aide du modèle de Lee-Carter se poursuit ensuite
+en utilisant la méthode ARIMA, nous obtenons de bons résultats pour la prévision du taux de mortalité pour plusieurs années ou périodes, en nous basant sur le modèle de mortalité. Dans tous les cas, nous restons largement dans l'intervalle prédit avoisinant le milieu pour toutes les prédictions.
+
+ps : Nous observons sur les graphiques affichant le forecast des k_t : on remarque deux nuances de gris : le plus clair correspondant à l'intervalle de confiance à 80% et le plus foncé celui à 95% 
 
 
-#Predictions of life expectancies at different ages - France Female
-
-#GETTING EX PIVOT FROM LIFE TABLE
+En outre, la fourchette des prédictions pour la France est plus large en raison de la Seconde Guerre mondiale et de son effet sur le k_t de 1940 à 1945.
 ```{r}
+#prédiction des k_t pour les femmes en France
+#LCforFRF$kt.f
+```
+
+
+# Predictions of life expectancies residuals
+
+## Predictions of life expectancies at given ages - USA Male and Female
+```{r}
+#Getting Ex_pivot_table from life_table
+
 ex_pivot_life <- function(life_table) {
 life_table_pivot <- life_table %>%
   select(Country, Gender, Year, Age, ex) %>%
@@ -1793,6 +1821,160 @@ return (life_table_pivot)
 }
 ex_life_table_pivot <-ex_pivot_life(life_table)
 ```
+
+
+```{r}
+#GETTING LIFE EXPECTANCY PREDICTIONS IN A DATAFRAME
+
+ex_predicted_us_male <- tibble()
+for (a in  0:109){
+lf <- flife.expectancy(USmale, series = names(USmale$rate)[1], years = USmale$year,
+   age=a+1, max.age = 110)
+  lf <- as.vector(t(tibble(lf)))
+  ex_predicted_us_male <- rbind(ex_predicted_us_male,lf)
+}
+colnames(ex_predicted_us_male) <- 1933:2017
+#glimpse(ex_predicted_us_male)
+
+ex_predicted_pivot_us_male <- as.data.frame(t(ex_predicted_us_male))
+Country <- rep("USA", 85)
+Gender <- rep("Male", 85)
+Year <- 1933:2017
+colnames(ex_predicted_pivot_us_male) <- 0:109
+
+
+ex_predicted_pivot_us_male <-cbind(Country,Gender, Year,ex_predicted_pivot_us_male) #now we have expectancy_pivot like qx pivot
+ex_observed_pivot_us_male <- as.data.frame(ex_life_table_pivot %>% filter(Country == "USA", Gender == "Male")) #and observed !!
+```
+
+```{r}
+ex_predicted_us_female <- tibble()
+for (a in  0:109){
+lf <- flife.expectancy(USfemale, series = names(USfemale$rate)[1], years = USfemale$year,
+   age=a+1, max.age = 110)
+  lf <- as.vector(t(tibble(lf)))
+  ex_predicted_us_female <- rbind(ex_predicted_us_female,lf)
+}
+colnames(ex_predicted_us_female) <- 1933:2017
+#glimpse(ex_predicted_us_female)
+
+ex_predicted_pivot_us_female <- as.data.frame(t(ex_predicted_us_female))
+Country <- rep("USA", 85)
+Gender <- rep("Female",85)
+Year <- 1933:2017
+colnames(ex_predicted_pivot_us_female) <- 0:109
+
+
+ex_predicted_pivot_us_female <-cbind(Country,Gender, Year,ex_predicted_pivot_us_female) #now we have expectancy_pivot like qx pivot
+ex_observed_pivot_us_female <- as.data.frame(ex_life_table_pivot %>% filter(Country == "USA", Gender == "Female")) #and observed !!
+```
+
+
+```{r}
+
+
+ex_observed_us_male <- ex_observed_pivot_us_male %>%
+  pivot_longer(
+      names_to = "Age",
+      cols = -c("Year","Country","Gender"),
+      values_to =  "Ex")
+
+ex_observed_us_male <- cbind(rep("Observed",nrow(ex_observed_us_male)),ex_observed_us_male)
+colnames(ex_observed_us_male)[1] <-"Type"
+colnames(ex_observed_us_male)[2] <-"Country"
+
+
+ex_predicted_us_male <- ex_predicted_pivot_us_male %>%
+  pivot_longer(
+      names_to = "Age",
+      cols = -c("Year","Country","Gender"),
+      values_to =  "Ex")
+
+ex_predicted_us_male <- cbind(rep("Predicted",nrow(ex_predicted_us_male)),ex_predicted_us_male)
+colnames(ex_predicted_us_male)[1] <-"Type"
+colnames(ex_predicted_us_male)[2] <-"Country"
+
+ex_us_male <- rbind(ex_predicted_us_male, ex_observed_us_male)
+
+ex_us_male %>%
+  tibble() %>%
+  head()
+
+
+```
+
+```{r}
+ex_observed_us_female <- ex_observed_pivot_us_female %>%
+  pivot_longer(
+      names_to = "Age",
+      cols = -c("Year","Country","Gender"),
+      values_to =  "Ex")
+
+ex_observed_us_female <- cbind(rep("Observed",nrow(ex_observed_us_female)),ex_observed_us_female)
+colnames(ex_observed_us_female)[1] <-"Type"
+colnames(ex_observed_us_female)[2] <-"Country"
+
+
+ex_predicted_us_female <- ex_predicted_pivot_us_female %>%
+  pivot_longer(
+      names_to = "Age",
+      cols = -c("Year","Country","Gender"),
+      values_to =  "Ex")
+
+ex_predicted_us_female <- cbind(rep("Predicted",nrow(ex_predicted_us_female)),ex_predicted_us_female)
+colnames(ex_predicted_us_female)[1] <-"Type"
+colnames(ex_predicted_us_female)[2] <-"Country"
+
+ex_us_female <- rbind(ex_predicted_us_female, ex_observed_us_female)
+
+ex_us_female %>%
+  tibble() %>%
+  head()
+
+```
+
+```{r, warning=FALSE}
+
+
+ex_us_female$Age <- as.numeric(ex_us_female$Age)
+femaleusex<-(ggplot(data = ex_us_female) +
+   aes(x = Year, 
+      y = Ex) +
+    aes(frame = Age,
+        color = ex_us_female$Type)+
+   geom_line() +
+  theme(legend.position = "none") +
+  labs(   color = "Type" )) %>% 
+  plotly::ggplotly(height = 500, width=750 )
+```
+
+```{r, warning=FALSE}
+
+ex_us_male$Age <- as.numeric(ex_us_male$Age)
+maleusex<-(ggplot(data = ex_us_male) +
+   aes(x = Year, 
+      y = Ex) +
+    aes(frame = Age,
+        color = ex_us_male$Type)+
+   geom_line() +
+  theme(legend.position = "none") +
+  labs(   color = "Type" )) %>% 
+  plotly::ggplotly(height = 500, width=750 )
+```
+
+```{r}
+subplot(maleusex, femaleusex ) %>% layout(showlegend = TRUE ,title = list(text = paste0('Life expectancy for Male(Left) and Female(Right) ', '<br>', 'in USA ',
+                                    '<br>',
+                                    '<sup>',
+                                    'at a given Age & Evolution in Time',
+                                    '</sup>')))
+
+
+
+```
+
+
+## Predictions of life expectancies at given ages - France Male and Female
 
 
 ```{r}
@@ -1820,14 +2002,131 @@ ex_observed_pivot_fr_female <- as.data.frame(ex_life_table_pivot %>% filter(Coun
 ```
 
 ```{r}
-#PLOTTING Theorical from prediction/Observed
-prediction_observed_ex_fr_female <- ex_observed_pivot_fr_female %>% ggplot() +
-  aes(x = Year, y = ex_observed_pivot_fr_female[,4]) +
-  geom_line(col = "red") +
-  geom_line(data = ex_predicted_pivot_fr_female, y = ex_predicted_pivot_fr_female[,4], col = "blue") +
-  #geom_line(data=ex_observed_pivot_fr_female, x = Year, y = ex_observed_pivot_fr_female[,4], col = "red") +
-  labs(y="Age", title = "Prediction of life expectancy at given age")
+ex_predicted_fr_male <- tibble()
+for (a in  0:109){
+lf <- flife.expectancy(FRmale, series = names(FRmale$rate)[1], years = FRmale$year,
+   age=a+1, max.age = 110)
+  lf <- as.vector(t(tibble(lf)))
+  ex_predicted_fr_male <- rbind(ex_predicted_fr_male,lf)
+}
+colnames(ex_predicted_fr_male) <- 1816:2017
+#glimpse(ex_predicted_fr_male)
 
-prediction_observed_ex_fr_female
+ex_predicted_pivot_fr_male <- as.data.frame(t(ex_predicted_fr_male))
+Country <- rep("France", 202)
+Gender <- rep("Male", 202)
+Year <- 1816:2017
+colnames(ex_predicted_pivot_fr_male) <- 0:109
+
+
+ex_predicted_pivot_fr_male <-cbind(Country,Gender, Year,ex_predicted_pivot_fr_male) #now we have expectancy_pivot like qx pivot
+ex_observed_pivot_fr_male <- as.data.frame(ex_life_table_pivot %>% filter(Country == "France", Gender == "Male")) #and observed !!
 ```
 
+
+```{r}
+
+
+ex_observed_fr_female <- ex_observed_pivot_fr_female %>%
+  pivot_longer(
+      names_to = "Age",
+      cols = -c("Year","Country","Gender"),
+      values_to =  "Ex")
+
+ex_observed_fr_female <- cbind(rep("Observed",nrow(ex_observed_fr_female)),ex_observed_fr_female)
+colnames(ex_observed_fr_female)[1] <-"Type"
+colnames(ex_observed_fr_female)[2] <-"Country"
+
+
+ex_predicted_fr_female <- ex_predicted_pivot_fr_female %>%
+  pivot_longer(
+      names_to = "Age",
+      cols = -c("Year","Country","Gender"),
+      values_to =  "Ex")
+
+ex_predicted_fr_female <- cbind(rep("Predicted",nrow(ex_predicted_fr_female)),ex_predicted_fr_female)
+colnames(ex_predicted_fr_female)[1] <-"Type"
+colnames(ex_predicted_fr_female)[2] <-"Country"
+
+ex_fr_female <- rbind(ex_predicted_fr_female, ex_observed_fr_female)
+
+ex_fr_female %>%
+  tibble() %>%
+  head()
+
+
+```
+
+```{r}
+ex_observed_fr_male <- ex_observed_pivot_fr_male %>%
+  pivot_longer(
+      names_to = "Age",
+      cols = -c("Year","Country","Gender"),
+      values_to =  "Ex")
+
+ex_observed_fr_male <- cbind(rep("Observed",nrow(ex_observed_fr_male)),ex_observed_fr_male)
+colnames(ex_observed_fr_male)[1] <-"Type"
+colnames(ex_observed_fr_male)[2] <-"Country"
+
+
+ex_predicted_fr_male <- ex_predicted_pivot_fr_male %>%
+  pivot_longer(
+      names_to = "Age",
+      cols = -c("Year","Country","Gender"),
+      values_to =  "Ex")
+
+ex_predicted_fr_male <- cbind(rep("Predicted",nrow(ex_predicted_fr_male)),ex_predicted_fr_male)
+colnames(ex_predicted_fr_male)[1] <-"Type"
+colnames(ex_predicted_fr_male)[2] <-"Country"
+
+ex_fr_male <- rbind(ex_predicted_fr_male, ex_observed_fr_male)
+
+ex_fr_male %>%
+  tibble() %>%
+  head()
+
+```
+
+```{r, warning=FALSE}
+
+
+ex_fr_female$Age <- as.numeric(ex_fr_female$Age)
+femalefrex<-(ggplot(data = ex_fr_female) +
+   aes(x = Year, 
+      y = Ex) +
+    aes(frame = Age,
+        color = ex_fr_female$Type)+
+   geom_line() +
+  theme(legend.position = "none") +
+  labs(   color = "Type" )) %>% 
+  plotly::ggplotly(height = 500, width=750 )
+```
+
+```{r, warning=FALSE}
+
+ex_fr_male$Age <- as.numeric(ex_fr_male$Age)
+malefrex<-(ggplot(data = ex_fr_male) +
+   aes(x = Year, 
+      y = Ex) +
+    aes(frame = Age,
+        color = ex_fr_male$Type)+
+   geom_line() +
+  theme(legend.position = "none") +
+  labs(   color = "Type" )) %>% 
+  plotly::ggplotly(height = 700, width=750 )
+```
+
+```{r}
+subplot(malefrex, femalefrex ) %>% layout(showlegend = TRUE ,title = list(text = paste0('Life expectancy for Male(Left) and Female(Right) ', '<br>', 'in France ',
+                                    '<br>',
+                                    '<sup>',
+                                    'at a given Age & Evolution in Time',
+                                    '</sup>')))
+
+
+
+```
+
+#### Commentaire sur les comparaisons prédictions/observations
+
+Pour la France et les Etats-Unis, les prédictions sont presque identiques aux observations. Nous pouvons donc conclure que les prédictions du modèle Lee-Carter sont particulièrement précises, tant pour la France que pour les Etats-Unis.
