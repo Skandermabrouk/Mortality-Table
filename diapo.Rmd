@@ -1,0 +1,330 @@
+---
+title: "Life expectancy evolution in France"
+subtitle: "⚔<br/>since 1816"
+author: "Corentin Guillaumet, Skandar Mabrouk & Lucas Veeravalli"
+institute: "University of Paris"
+date: "December 14th 2021"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: 16:9
+---
+class: center, middle
+#Summary
+- Evolution of mortality quotient since 1816
+- How to obtain an estimation for the future
+- Estimating life expectancies
+
+---
+class: center, top
+##I. Evolution of mortality quotient since 1816
+```{r setup, include=FALSE, echo=FALSE}
+options(htmltools.dir.version = FALSE)
+if(! 'pacman' %in% installed.packages()[,1]){
+  install.packages("pacman")
+}
+pacman::p_load(tidyverse)
+pacman::p_load(shiny)
+pacman::p_load(knitr)
+pacman::p_load(png)
+pacman::p_load(plotly)
+pacman::p_load(readr)
+pacman::p_load(StMoMo)
+pacman::p_load(ggfortify)
+pacman::p_load(pathlibr)
+pacman::p_load(demography)
+pacman::p_load(glue)
+
+fpath <- 'full_life_table.Rds'  # once you have downloaded the file
+if (! file.exists(fpath)){
+  cat(glue('{fpath} should be in working directory!'))
+} else {
+  life_table <- readr::read_rds(fpath)
+  glimpse(life_table)
+}
+
+
+```
+
+```{r, echo=FALSE, include=FALSE}
+pivot_life <- function(life_table) {
+life_table_pivot <- life_table %>%
+  select(Country, Gender, Year, Age, qx) %>%
+    pivot_wider(
+      id_cols = c("Country","Gender","Year"),
+      names_from = Age,
+      values_from = qx
+    )
+return (life_table_pivot)
+}
+life_table_pivot <-pivot_life(life_table)
+  
+```
+.middle[
+.pull-left[
+```{r}
+
+plot1 <- life_table_fr_evol <- life_table %>% filter(Country =='France', Gender != "Both") %>%
+  ggplot() +
+  geom_line(mapping = aes(y= qx, col = Gender, x= Age)) +
+  aes(frame = Year, text = qx) +
+  theme(axis.text.x=element_text(angle=-45, hjust=0, vjust=1)) +xlab("Age") +ylab("Mortality quotient")+
+  theme(plot.title=element_text(size=12, hjust=0.5, face="bold", colour="maroon", vjust=-1)) +
+  theme(plot.subtitle=element_text(size=10, hjust=0.5, face="italic", color="black"))
+
+```
+]
+.pull-right[
+```{r, echo=FALSE}
+ggplotly(plot1, height = 400, width=550)
+```
+]
+]
+
+---
+class: center, middle
+##II. A. How to obtain an estimation for the future (Computing Lee Carter model)
+.pull-left[
+```{r, echo = TRUE}
+#FEMALE
+Years <- 1933:1995
+T <- length(Years)
+Age <- 1:110
+A_FRF <- life_table_pivot %>%
+  filter(Country == "France", Gender == 'Female', Year %in% Years) %>%
+  select(-Gender, -Country, -Year) %>%
+  log() %>%
+  as.matrix()
+M_FRF<- (diag(1,T) - ((1/T)*matrix(1,T,1) %*% t(matrix(1,T,1)))) %*% A_FRF
+svdFRF <- svd(M_FRF,1,1)
+sFRF <- svdFRF$d[1]
+uFRF <- -1 *(svdFRF$u*sFRF)
+vFRF <- -1 *svdFRF$v
+axFRF <- colMeans(A_FRF)
+```
+]
+.pull-right[
+```{r, echo=FALSE}
+#plot(Age, ax)
+#plot(Age, v, ylab = "Bx")
+#plot(Years, u, ylab = "K")
+data_FRF <- tibble(age = 0:109, axFRF)
+#alpha
+g_1_FRF <- ggplot(data_FRF) + geom_point(aes(age,axFRF)) +
+  geom_line(aes(age,axFRF), col = "red") +
+  theme_bw() +
+  ggtitle("Alpha estimating of France Female") +
+  labs(y = bquote(hat(alpha)[x]^"(1)"))
+#beta
+g_2_FRF <- ggplot(data_FRF) + geom_point(aes(age,vFRF)) +
+  geom_line(aes(age,vFRF), col = "red") +
+  theme_bw() +
+  ggtitle("Beta estimating of France Female") +
+  labs(y = bquote(hat(beta)[x]^"(1)"))
+
+#kappa
+data_period_FRF <- tibble(year = 1933:1995, uFRF)
+
+g_3_FRF <- ggplot(data_period_FRF) + geom_point(aes(year,uFRF)) +
+  geom_line(aes(year,uFRF), col = "red") +
+  theme_bw() +
+  ggtitle("kappa estimating of France Female") +
+  labs(y = bquote(hat(kappa)[t]^"(1)"))
+gridExtra::grid.arrange(g_1_FRF,g_2_FRF,g_3_FRF, ncol = 2)
+```
+]
+---
+class: center, middle
+###II. B. Comparing Norms (SVD Rank 2 vs Lee Carter)
+.pull-left[
+```{r}
+res_FRF <- svd(A_FRF)
+matFRF <- (res_FRF$u[,1:2]) %*% diag(res_FRF$d[1:2])%*%t(res_FRF$v[,1:2])
+
+matLEEFRF = matrix(0,nrow = 63 , ncol = 110)
+for (i in 1:110){
+  matLEEFRF[,i] = t(axFRF)[i] +vFRF[i]*uFRF
+}
+
+```
+]
+.pull-right[
+```{r}
+norm(matFRF - as.matrix(A_FRF) , "F") #9.684005
+norm(matLEEFRF -as.matrix(A_FRF), "F") #10.07679
+```
+]
+---
+class: center, middle
+##II. C. Computing and displaying Lee Carter parameters
+.middle[
+```{r,echo=FALSE,include=FALSE,warning=FALSE}
+#FEMALE
+FR_female <-life_table_pivot%>%
+  dplyr::filter(Country == 'France' , Gender == 'Female')%>%
+  dplyr::select(-Country,-Gender)
+svdfemaleFR <- svd(FR_female ,nv=2)
+summary(svdfemaleFR) %>%
+  knitr::kable()
+#trouver exposition à la mort  en fct de qx ?
+#filtrer life table a usa et selectioner uniquement les dx et qx et age et year 
+#esssayer d'avoir une matrice de la meme dimensiion que life table pivot fiotre aux USA 
+pivot_life_lx <- function(life_table) {
+pivot_life_lx <- life_table %>%
+  select(Country, Gender, Year, Age, lx) %>%
+    pivot_wider(
+      id_cols = c("Country","Gender","Year"),
+      names_from = Age,
+      values_from = lx
+    )
+return (pivot_life_lx)
+}
+l__x <- pivot_life_lx(life_table)
+lx_femaleFR<- l__x %>%
+  filter(Country == 'France' , Gender == 'Female') %>%
+  select(-Country , -Gender )
+ 
+Exp <- life_table$lx
+#créer un life table pivot avec lx de mm dim que life_pivot _qx
+#pop <- acast(lx,Age~Year)
+FR_female <- FR_female%>%
+  select( -Year)
+lx_femaleFR <- lx_femaleFR%>%
+  select( -Year)
+
+FRfemale <- demography::demogdata(data = t(FR_female), 
+                 pop = t(lx_femaleFR), 
+                 ages = 1:110, 
+                 years= 1816:2017, 
+                 type = "mortality", 
+                 label = "France", 
+                 name = "Female",
+                 lambda = 1)
+LC_female_FR<-demography::lca(FRfemale, max.age = 110)
+```
+
+```{r, include=FALSE, echo=FALSE, warning=FALSE}
+constLC <- function (ax, bx,kt ,b0x, gc ,wxt ,ages) {
+  c1 <- mean(kt[1,], na.rm = TRUE)
+  c2 <- sum(bx[, 1], na.rm = TRUE)
+  list(ax = ax+c1*bx[,1] ,
+       bx=bx[,1]/c2 ,
+       kt=c2*(kt[1,]-c1))
+}
+LC <- StMoMo(link = "log" , staticAgeFun = TRUE , periodAgeFun = "NP" , constFun = constLC)
+```
+.pull-left[
+```{r, echo=TRUE, warning=FALSE}
+LC <- lc() #Leecarter function from StMoMo on a demogdata object
+FRF <- StMoMoData(FRfemale , series = "Female") #Transforming a demogdata FRfemale object into StMoMoData object
+ages.fit <- 1:110
+years.fit <- 1945:1995
+LCfit1 <- fit(LC, data =FRF , ages.fit=ages.fit , years.fit=years.fit) #Lee Carter Function from StMoMo
+
+#Forecasting 
+LCforFRF <- forecast(LCfit1, h=20)
+```
+]
+.pull-right[
+```{r, echo=FALSE}
+plot(LCforFRF, parametricbx = FALSE)
+```
+]
+]
+
+---
+class: center, middle
+##III. Estimating life expectancies with demography
+.middle[
+.pull-left[
+
+```{r,echo=FALSE, warning=FALSE, include=FALSE}
+#Getting Ex_pivot_table from life_table
+
+ex_pivot_life <- function(life_table) {
+life_table_pivot <- life_table %>%
+  select(Country, Gender, Year, Age, ex) %>%
+    pivot_wider(
+      id_cols = c("Country","Gender","Year"),
+      names_from = Age,
+      values_from = ex
+    )
+return (life_table_pivot)
+}
+ex_life_table_pivot <-ex_pivot_life(life_table)
+```
+```{r, echo=TRUE, warning=FALSE}
+ex_predicted_fr_female <- tibble()
+for (a in  0:109){
+lf <- flife.expectancy(FRfemale, series = names(FRfemale$rate)[1], years = FRfemale$year,
+   age=a+1, max.age = 110)
+  lf <- as.vector(t(tibble(lf)))
+  ex_predicted_fr_female <- rbind(ex_predicted_fr_female,lf)
+}
+colnames(ex_predicted_fr_female) <- 1816:2017
+
+ex_predicted_pivot_fr_female <- as.data.frame(t(ex_predicted_fr_female))
+Country <- rep("France", 202)
+Gender <- rep("Female", 202)
+Year <- 1816:2017
+colnames(ex_predicted_pivot_fr_female) <- 0:109
+
+ex_predicted_pivot_fr_female <-cbind(Country,Gender, Year,ex_predicted_pivot_fr_female)
+ex_observed_pivot_fr_female <- as.data.frame(ex_life_table_pivot %>% filter(Country == "France", Gender == "Female"))
+```
+
+```{r, echo=FALSE, warning=FALSE}
+ex_observed_fr_female <- ex_observed_pivot_fr_female %>%
+  pivot_longer(
+      names_to = "Age",
+      cols = -c("Year","Country","Gender"),
+      values_to =  "Ex")
+
+ex_observed_fr_female <- cbind(rep("Observed",nrow(ex_observed_fr_female)),ex_observed_fr_female)
+colnames(ex_observed_fr_female)[1] <-"Type"
+colnames(ex_observed_fr_female)[2] <-"Country"
+
+
+ex_predicted_fr_female <- ex_predicted_pivot_fr_female %>%
+  pivot_longer(
+      names_to = "Age",
+      cols = -c("Year","Country","Gender"),
+      values_to =  "Ex")
+
+ex_predicted_fr_female <- cbind(rep("Predicted",nrow(ex_predicted_fr_female)),ex_predicted_fr_female)
+colnames(ex_predicted_fr_female)[1] <-"Type"
+colnames(ex_predicted_fr_female)[2] <-"Country"
+```
+
+```{r,include=FALSE, warning=FALSE, echo=FALSE}
+ex_fr_female <- rbind(ex_predicted_fr_female, ex_observed_fr_female)
+
+ex_fr_female %>%
+  tibble() %>%
+  head()
+```
+]
+.pull-right[
+```{r,echo=FALSE, warning=FALSE}
+
+
+ex_fr_female$Age <- as.numeric(ex_fr_female$Age)
+femalefrex<-(ggplot(data = ex_fr_female) +
+   aes(x = Year, 
+      y = Ex) +
+    aes(frame = Age,
+        color = ex_fr_female$Type)+
+   geom_line() +
+  theme(legend.position = "none") +
+  labs(   color = "Type" )) %>% 
+  plotly::ggplotly(height = 400, width=550 )
+
+femalefrex
+```
+]
+]
+
